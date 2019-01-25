@@ -43,13 +43,13 @@ SRenderer::SRenderer(std::shared_ptr<SNodeGraph> tiles) {
 
   this->loadTexture(nodeTexturePath);
 
-  SNode::setNodeTexture(this->textures[nodeTexturePath]);
+  //  SNode::setNodeTexture(this->textures[nodeTexturePath]);
 
   std::string buildingTexturePath = "./assets/building.png";
 
   this->loadTexture(buildingTexturePath);
 
-  SBuilding::setBuildingTexture(this->textures[buildingTexturePath]);
+  //  SBuilding::setBuildingTexture(this->textures[buildingTexturePath]);
 
   std::string unitTexturePath = "./assets/spearman.png";
 
@@ -96,8 +96,6 @@ void SRenderer::render() {
   SDL_Rect dstRect;
   dstRect.w = dstRect.h =
       tileSize / this->renderCamera.currentZoom * realVirtualRatio + 2;
-  SDL_Texture *tex = SNode::getNodeTexture();
-  SDL_Texture *bTex = SBuilding::getBuildingTexture();
   for (auto &dt : dts) {
     std::tie(x, y) = dt->getPos();
     dstRect.x = x * tileSize / this->renderCamera.currentZoom + drawOffset.x;
@@ -107,11 +105,13 @@ void SRenderer::render() {
     dstRect.y *= realVirtualRatio;
 
     //    SDL_RenderCopy(this->renderer, tex, nullptr, &dstRect);
-    this->renderCenter(tex, nullptr, dstRect);
+    this->renderCenter(this->textures[dt->getTexturePath()], nullptr, dstRect);
 
     if (dt->getTileBuilding() != nullptr) {
       //      SDL_RenderCopy(this->renderer, bTex, nullptr, &dstRect);
-      this->renderCenter(bTex, nullptr, dstRect);
+      this->renderCenter(
+          this->textures[dt->getTileBuilding()->getTexturePath()], nullptr,
+          dstRect);
     }
     auto presUnits = dt->getTileUnits();
     int numUnits = presUnits.size();

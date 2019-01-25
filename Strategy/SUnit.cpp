@@ -1,5 +1,3 @@
-#include <SDL2/SDL.h>
-
 #include "SUnit.hpp"
 
 SUnit::SUnit() {
@@ -7,7 +5,59 @@ SUnit::SUnit() {
   this->currentMoves = maxMoves;
 }
 
+SUnit::SUnit(const SUnit &other) {
+  this->maxHP = other.maxHP;
+  this->damage = other.damage;
+  this->accuracy = other.accuracy;
+  this->maxMoves = other.maxMoves;
+
+  this->texturePath = other.texturePath;
+
+  this->currentHP = this->maxHP;
+  this->currentMoves = this->maxMoves;
+}
+
+SUnit::SUnit(SUnit &&other) {
+  this->maxHP = other.maxHP;
+  this->damage = other.damage;
+  this->accuracy = other.accuracy;
+  this->maxMoves = other.maxMoves;
+
+  this->texturePath = other.texturePath;
+
+  this->currentHP = this->maxHP;
+  this->currentMoves = this->maxMoves;
+}
+
 SUnit::~SUnit() {}
+
+SUnit &SUnit::operator=(const SUnit &other) {
+  this->maxHP = other.maxHP;
+  this->damage = other.damage;
+  this->accuracy = other.accuracy;
+  this->maxMoves = other.maxMoves;
+
+  this->texturePath = other.texturePath;
+
+  this->currentHP = this->maxHP;
+  this->currentMoves = this->maxMoves;
+
+  return *this;
+}
+
+SUnit &SUnit::operator=(SUnit &&other) {
+  this->maxHP = other.maxHP;
+  this->damage = other.damage;
+  this->accuracy = other.accuracy;
+  this->maxMoves = other.maxMoves;
+
+  this->texturePath = other.texturePath;
+
+  this->currentHP = this->maxHP;
+  this->currentMoves = this->maxMoves;
+
+  return *this;
+}
 
 bool SUnit::isDead() { return this->currentHP <= 0; }
 
@@ -31,6 +81,8 @@ int SUnit::dealDamage(float chance) {
   }
 }
 
-SDL_Texture *SUnit::getTexture() { return this->texture; }
+std::string &SUnit::getTexturePath() { return this->texturePath; }
 
-void SUnit::setTexture(SDL_Texture *texture) { this->texture = texture; }
+void SUnit::setTexturePath(const std::string &newTexturePath) {
+  this->texturePath = newTexturePath;
+}

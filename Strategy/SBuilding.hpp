@@ -1,14 +1,20 @@
 #pragma once
 
-struct SDL_Texture;
+#include <string>
 
-class SBuilding
-{
+class SBuilding {
 public:
-    SBuilding();
-    static void setBuildingTexture(SDL_Texture* newTexture);
-    static SDL_Texture* getBuildingTexture();
+  SBuilding();
+  SBuilding(const SBuilding &other);
+  SBuilding(SBuilding &&other);
+  ~SBuilding();
+
+  SBuilding &operator=(const SBuilding &other);
+  SBuilding &operator=(SBuilding &&other);
+
+  void setTexturePath(const std::string &newTexturePath);
+  std::string &getTexturePath();
 
 protected:
-    inline static SDL_Texture* buildingTexture;
+  std::string texturePath;
 };

@@ -17,12 +17,20 @@ SNodeGraph::SNodeGraph(int width, int height, bool bWrapX, bool bWrapY) {
   this->bWrapX = bWrapX;
   this->bWrapY = bWrapY;
 
+  SNode defaultNode{};
+  defaultNode.setTexturePath("./assets/tile.png");
+  defaultNode.setMovementCost(1);
+
+  SBuilding defaultBuilding{};
+  defaultBuilding.setTexturePath("./assets/building.png");
+
   this->tiles = std::vector<std::shared_ptr<SNode>>(width * height);
   for (int i = 0; i < width; i++) {
     for (int j = 0; j < height; j++) {
-      auto newNode = std::make_shared<SNode>(i, j);
+      auto newNode = std::make_shared<SNode>(defaultNode);
+      newNode->setPos(i, j);
       if (i % 4 == j % 7 - 3) {
-        newNode->setTileBuilding(std::make_shared<SBuilding>());
+        newNode->setTileBuilding(std::make_shared<SBuilding>(defaultBuilding));
       }
       this->tiles[i + j * width] = newNode;
     }

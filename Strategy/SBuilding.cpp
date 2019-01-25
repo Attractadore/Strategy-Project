@@ -2,10 +2,28 @@
 
 SBuilding::SBuilding() {}
 
-void SBuilding::setBuildingTexture(SDL_Texture *newTexture) {
-  SBuilding::buildingTexture = newTexture;
+SBuilding::SBuilding(const SBuilding &other) {
+  this->texturePath = other.texturePath;
 }
 
-SDL_Texture *SBuilding::getBuildingTexture() {
-  return SBuilding::buildingTexture;
+SBuilding::SBuilding(SBuilding &&other) {
+  this->texturePath = other.texturePath;
 }
+
+SBuilding::~SBuilding() {}
+
+SBuilding &SBuilding::operator=(const SBuilding &other) {
+  this->texturePath = other.texturePath;
+  return *this;
+}
+
+SBuilding &SBuilding::operator=(SBuilding &&other) {
+  this->texturePath = other.texturePath;
+  return *this;
+}
+
+void SBuilding::setTexturePath(const std::string &newTexturePath) {
+  this->texturePath = newTexturePath;
+}
+
+std::string &SBuilding::getTexturePath() { return this->texturePath; }

@@ -1,44 +1,74 @@
 #include "SNode.hpp"
 
-#include <SDL2/SDL.h>
-
 #include <algorithm>
 
-SNode::SNode(int x, int y) {
-  this->presentUnits = {};
-  this->pos = std::make_pair(x, y);
+SNode::SNode() {}
+
+SNode::SNode(const SNode &other) {
+  this->texturePath = other.texturePath;
+  this->movementCost = other.movementCost;
 }
+
+SNode::SNode(SNode &&other) {
+  this->texturePath = other.texturePath;
+  this->movementCost = other.movementCost;
+}
+
+SNode::SNode(int x, int y) { this->pos = std::make_pair(x, y); }
 
 SNode::~SNode() {}
 
+SNode &SNode::operator=(const SNode &other) {
+  this->texturePath = other.texturePath;
+  this->movementCost = other.movementCost;
+  return *this;
+}
+
+SNode &SNode::operator=(SNode &&other) {
+  this->texturePath = other.texturePath;
+  this->movementCost = other.movementCost;
+  return *this;
+}
+
 std::pair<int, int> SNode::getPos() { return this->pos; }
+
+int SNode::getMovementCost() { return this->movementCost; }
 
 std::shared_ptr<SBuilding> SNode::getTileBuilding() {
   return this->tileBuilding;
 }
 
-std::list<std::shared_ptr<SUnit>> SNode::getTileUnits(){
-    return this->presentUnits;
+std::list<std::shared_ptr<SUnit>> SNode::getTileUnits() {
+  return this->presentUnits;
+}
+
+void SNode::setPos(int x, int y) { this->pos = std::make_pair(x, y); }
+
+void SNode::setPos(const std::pair<int, int> &newPos) { this->pos = newPos; }
+
+void SNode::setMovementCost(int newMovementCost) {
+  this->movementCost = newMovementCost;
 }
 
 void SNode::setTileBuilding(std::shared_ptr<SBuilding> newBuilding) {
   this->tileBuilding = newBuilding;
 }
 
-void SNode::addUnitToTile(std::shared_ptr<SUnit> unit){
-    this->presentUnits.push_back(unit);
+void SNode::addUnitToTile(std::shared_ptr<SUnit> unit) {
+  this->presentUnits.push_back(unit);
 }
 
-std::shared_ptr<SUnit> SNode::removeUnitFromTile(std::shared_ptr<SUnit> unit){
-    auto it = std::find(this->presentUnits.begin(), this->presentUnits.end(), unit);
-    if (it == presentUnits.end()){
-        return nullptr;
-    }
-    return *it;
+std::shared_ptr<SUnit> SNode::removeUnitFromTile(std::shared_ptr<SUnit> unit) {
+  auto it =
+      std::find(this->presentUnits.begin(), this->presentUnits.end(), unit);
+  if (it == presentUnits.end()) {
+    return nullptr;
+  }
+  return *it;
 }
 
-void SNode::setNodeTexture(SDL_Texture *newTexture) {
-  SNode::nodeTexture = newTexture;
+void SNode::setTexturePath(const std::string &newTexturePath) {
+  this->texturePath = newTexturePath;
 }
 
-SDL_Texture *SNode::getNodeTexture() { return SNode::nodeTexture; }
+std::string &SNode::getTexturePath() { return this->texturePath; }
