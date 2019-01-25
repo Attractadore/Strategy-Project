@@ -55,8 +55,6 @@ SRenderer::SRenderer(std::shared_ptr<SNodeGraph> tiles) {
 
   this->loadTexture(unitTexturePath);
 
-  SSpearman::setTexture(this->textures[unitTexturePath]);
-
   this->tiles = tiles;
 
   this->renderCamera.viewportWidth = screenWidth;
@@ -108,16 +106,15 @@ void SRenderer::render() {
     dstRect.x *= realVirtualRatio;
     dstRect.y *= realVirtualRatio;
 
-//    SDL_RenderCopy(this->renderer, tex, nullptr, &dstRect);
-    this->renderCenter(tex, nullptr, &dstRect);
+    //    SDL_RenderCopy(this->renderer, tex, nullptr, &dstRect);
+    this->renderCenter(tex, nullptr, dstRect);
 
     if (dt->getTileBuilding() != nullptr) {
-//      SDL_RenderCopy(this->renderer, bTex, nullptr, &dstRect);
-        this->renderCenter(bTex, nullptr, &dstRect);
+      //      SDL_RenderCopy(this->renderer, bTex, nullptr, &dstRect);
+      this->renderCenter(bTex, nullptr, dstRect);
     }
     auto presUnits = dt->getTileUnits();
     int numUnits = presUnits.size();
-
   }
 
   SDL_RenderPresent(this->renderer);
@@ -147,8 +144,9 @@ void SRenderer::loadTexture(std::string path) {
   this->textures[path] = tex;
 }
 
-inline void SRenderer::renderCenter(SDL_Texture *texture, SDL_Rect *srcrect, SDL_Rect *dstrect){
-    dstrect->x -= dstrect-> w / 2;
-    dstrect->y -= dstrect-> h / 2;
-    SDL_RenderCopy(this->renderer, texture, srcrect, dstrect);
+inline void SRenderer::renderCenter(SDL_Texture *texture, SDL_Rect *srcrect,
+                                    SDL_Rect dstrect) {
+  dstrect.x -= dstrect.w / 2;
+  dstrect.y -= dstrect.h / 2;
+  SDL_RenderCopy(this->renderer, texture, srcrect, &dstrect);
 }

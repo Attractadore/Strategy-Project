@@ -3,11 +3,11 @@
 #include "SUnit.hpp"
 
 SUnit::SUnit() {
-  //  this->currentHP = SUnit::maxHP;
-  //  this->currentMoves = SUnit::maxMoves;
   this->currentHP = maxHP;
   this->currentMoves = maxMoves;
 }
+
+SUnit::~SUnit() {}
 
 bool SUnit::isDead() { return this->currentHP <= 0; }
 
@@ -24,19 +24,13 @@ int SUnit::applyDamage(int amount) {
 }
 
 int SUnit::dealDamage(float chance) {
-  if (chance > SUnit::accuracy) {
+  if (chance > this->accuracy) {
     return 0;
   } else {
-    return SUnit::damage;
+    return this->damage;
   }
 }
 
-SDL_Texture* SUnit::getTexture() { return texture; }
+SDL_Texture *SUnit::getTexture() { return this->texture; }
 
-void SUnit::setTexture(SDL_Texture* texture) {
-  SUnit::texture = texture;
-}
-
-SSpearman::SSpearman() : SUnit() {}
-
-SSpearman::~SSpearman() {}
+void SUnit::setTexture(SDL_Texture *texture) { this->texture = texture; }

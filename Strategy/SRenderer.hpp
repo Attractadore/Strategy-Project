@@ -26,7 +26,8 @@ public:
 private:
   void loadTexture(std::string path);
 
-  inline void renderCenter(SDL_Texture* texture, SDL_Rect* srcrect, SDL_Rect* dstrect);
+  inline void renderCenter(SDL_Texture *texture, SDL_Rect *srcrect,
+                           SDL_Rect dstrect);
 
   SCamera renderCamera{};
   SDL_Renderer *renderer = nullptr;
