@@ -14,6 +14,8 @@ add_executable(${PROJECT_NAME}
     "SNodeGraph.cpp"
     "SRenderer.cpp"
     "SBuilding.cpp"
+    "SLoader.cpp"
+    "SGameManager.cpp"
 )
 
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2IMAGE_INCLUDE_DIRS})

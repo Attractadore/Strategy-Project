@@ -1,16 +1,19 @@
 #include "SRenderer.hpp"
 
 #include "SBuilding.hpp"
+#include "SCamera.hpp"
 #include "SNode.hpp"
 #include "SNodeGraph.hpp"
 #include "SUnit.hpp"
+
+#include <glm/glm.hpp>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
 #include <iostream>
 
-SRenderer::SRenderer(std::shared_ptr<SNodeGraph> tiles) {
+SRenderer::SRenderer() {
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
     throw std::runtime_error("Failed to init SDL");
@@ -22,14 +25,17 @@ SRenderer::SRenderer(std::shared_ptr<SNodeGraph> tiles) {
 
   SDL_DisplayMode dm;
   SDL_GetCurrentDisplayMode(0, &dm);
-  const int screenWidth = dm.w * (2.0f / 3.0f);
-  const int screenHeight = dm.h * (2.0f / 3.0f);
+  std::cout << "Dm size " << dm.w << " " << dm.h << std::endl;
+  m_screenWidth = dm.w * (3.f / 4.f);
+  m_screenHeight = dm.h * (3.f / 4.f);
+  //  m_screenWidth = 1600;
+  //  m_screenHeight = 1000;
   //  const int screenWidth = 2100;
   //  const int screenHeight = 900;
 
   window = SDL_CreateWindow("Strategy", SDL_WINDOWPOS_UNDEFINED,
-                            SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight,
-                            SDL_WINDOW_SHOWN);
+                            SDL_WINDOWPOS_UNDEFINED, m_screenWidth,
+                            m_screenHeight, SDL_WINDOW_SHOWN);
   if (window == nullptr) {
     throw std::runtime_error("Failed to create window SDL error " +
                              std::string(SDL_GetError()));
@@ -40,25 +46,16 @@ SRenderer::SRenderer(std::shared_ptr<SNodeGraph> tiles) {
   SDL_SetRenderDrawColor(this->renderer, 0x00, 0x80, 0x80, 0x00);
 
   std::string nodeTexturePath = "./assets/tile.png";
+  std::string buildingTexturePath = "./assets/building.png";
+  std::string unitTexturePath = "./assets/spearman.png";
+  std::string selectionTexturePath = "./assets/selection.png";
+  std::string endTurnButtonTexturePath = "./assets/ui/endTurn.png";
 
   this->loadTexture(nodeTexturePath);
-
-  //  SNode::setNodeTexture(this->textures[nodeTexturePath]);
-
-  std::string buildingTexturePath = "./assets/building.png";
-
   this->loadTexture(buildingTexturePath);
-
-  //  SBuilding::setBuildingTexture(this->textures[buildingTexturePath]);
-
-  std::string unitTexturePath = "./assets/spearman.png";
-
   this->loadTexture(unitTexturePath);
-
-  this->tiles = tiles;
-
-  this->renderCamera.viewportWidth = screenWidth;
-  this->renderCamera.viewportHeight = screenHeight;
+  this->loadTexture(selectionTexturePath);
+  this->loadTexture(endTurnButtonTexturePath);
 }
 
 SRenderer::~SRenderer() {
@@ -76,57 +73,91 @@ SRenderer::~SRenderer() {
 
 void SRenderer::render() {
   SDL_RenderClear(this->renderer);
-  auto dts = this->tiles->getTiles();
+  auto dts = m_tiles->getTiles();
 
-  float virtualRatio = static_cast<float>(this->renderCamera.viewportWidth) /
-                       this->renderCamera.viewportHeight;
+  float virtualRatio =
+      static_cast<float>(m_camera->viewportWidth) / m_camera->viewportHeight;
   float virtualHeight = 1000.0f;
 
-  float realVirtualRatio = this->renderCamera.viewportHeight / virtualHeight;
+  float realVirtualRatio = m_camera->viewportHeight / virtualHeight;
 
   float tileSize = 60.0f;
-  float unitSize = 10.0f;
+  float unitSize = 20.0f;
+  float selectionSize = 80.0f;
+  SDL_Rect endTurnButtonPos;
+  endTurnButtonPos.w = 150;
+  endTurnButtonPos.h = 150;
+  endTurnButtonPos.x = 1000 * virtualRatio - endTurnButtonPos.w;
+  endTurnButtonPos.y = 1000 - endTurnButtonPos.h;
 
-  auto camPos = this->renderCamera.pos;
+  auto camPos = m_camera->pos;
   glm::vec2 drawOffset =
-      -camPos / this->renderCamera.currentZoom +
+      -camPos / m_camera->currentZoom +
       glm::vec2(virtualHeight * virtualRatio / 2, virtualHeight / 2);
 
   int x, y;
   SDL_Rect dstRect;
-  dstRect.w = dstRect.h =
-      tileSize / this->renderCamera.currentZoom * realVirtualRatio + 2;
   for (auto &dt : dts) {
     std::tie(x, y) = dt->getPos();
-    dstRect.x = x * tileSize / this->renderCamera.currentZoom + drawOffset.x;
-    dstRect.y = y * tileSize / this->renderCamera.currentZoom + drawOffset.y;
+    dstRect.w = dstRect.h =
+        tileSize / m_camera->currentZoom * realVirtualRatio + 2;
+
+    dstRect.x = x * tileSize / m_camera->currentZoom + drawOffset.x;
+    dstRect.y = y * tileSize / m_camera->currentZoom + drawOffset.y;
 
     dstRect.x *= realVirtualRatio;
     dstRect.y *= realVirtualRatio;
 
-    //    SDL_RenderCopy(this->renderer, tex, nullptr, &dstRect);
     this->renderCenter(this->textures[dt->getTexturePath()], nullptr, dstRect);
 
+    if (dt == m_selectedTile) {
+      dstRect.w = dstRect.h =
+          selectionSize / m_camera->currentZoom * realVirtualRatio;
+      this->renderCenter(this->textures["./assets/selection.png"], nullptr,
+                         dstRect);
+    }
+
     if (dt->getTileBuilding() != nullptr) {
-      //      SDL_RenderCopy(this->renderer, bTex, nullptr, &dstRect);
+      dstRect.w = dstRect.h =
+          tileSize / m_camera->currentZoom * realVirtualRatio;
       this->renderCenter(
           this->textures[dt->getTileBuilding()->getTexturePath()], nullptr,
           dstRect);
     }
     auto presUnits = dt->getTileUnits();
     int numUnits = presUnits.size();
+    if (numUnits > 0) {
+      float w = unitSize / 2 * (numUnits - 1) / m_camera->currentZoom *
+                realVirtualRatio;
+      float h = unitSize / 4 * (numUnits - 1) / m_camera->currentZoom *
+                realVirtualRatio;
+      dstRect.w = dstRect.h =
+          unitSize / m_camera->currentZoom * realVirtualRatio;
+      dstRect.x -= w / 2;
+      dstRect.y -= h / 2;
+      for (int i = 0; i < numUnits; i++) {
+        this->renderCenter(this->textures[presUnits[i]->getTexturePath()],
+                           nullptr, dstRect);
+        if (numUnits > 1) {
+          dstRect.x += w / (numUnits - 1);
+          dstRect.y += h / (numUnits - 1);
+        }
+      }
+    }
   }
 
+  endTurnButtonPos.w *= realVirtualRatio;
+  endTurnButtonPos.h *= realVirtualRatio;
+  endTurnButtonPos.x *= realVirtualRatio;
+  endTurnButtonPos.y *= realVirtualRatio;
+
+  //  std::cout << "Render end turn button at " << endTurnButtonPos.x << " "
+  //            << endTurnButtonPos.y << std::endl;
+
+  SDL_RenderCopy(renderer, textures["./assets/ui/endTurn.png"], nullptr,
+                 &endTurnButtonPos);
+
   SDL_RenderPresent(this->renderer);
-}
-
-void SRenderer::addCameraMovementInput(glm::vec2 inp, float deltaTime) {
-  this->renderCamera.pos += inp * this->renderCamera.cameraSpeed * deltaTime;
-}
-
-void SRenderer::addCameraZoom(float val, float deltaTime) {
-  this->renderCamera.currentZoom *=
-      std::pow(1 - this->renderCamera.zoomRate, val);
 }
 
 void SRenderer::loadTexture(std::string path) {
@@ -150,3 +181,19 @@ inline void SRenderer::renderCenter(SDL_Texture *texture, SDL_Rect *srcrect,
   dstrect.y -= dstrect.h / 2;
   SDL_RenderCopy(this->renderer, texture, srcrect, &dstrect);
 }
+
+void SRenderer::setRenderCamera(std::shared_ptr<SCamera> p_camera) {
+  m_camera = p_camera;
+  m_camera->viewportWidth = m_screenWidth;
+  m_camera->viewportHeight = m_screenHeight;
+}
+
+void SRenderer::setRenderTiles(std::shared_ptr<SNodeGraph> p_renderTiles) {
+  m_tiles = p_renderTiles;
+}
+
+void SRenderer::setSelectedTile(std::shared_ptr<SNode> p_tile) {
+  m_selectedTile = p_tile;
+}
+
+void SRenderer::resetSelectedTile() { m_selectedTile = nullptr; }

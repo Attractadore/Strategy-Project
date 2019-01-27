@@ -2,6 +2,9 @@
 
 #include <memory>
 #include <string>
+#include <vector>
+
+class SNode;
 
 class SUnit {
 public:
@@ -21,15 +24,26 @@ public:
   std::string &getTexturePath();
   void setTexturePath(const std::string &texturePath);
 
-protected:
-  int maxHP;
-  int damage;
-  float accuracy;
-  int maxMoves;
+  void setMaxHP(int p_maxHP);
+  void setDamage(int p_damage);
+  void setAccuracy(int p_accuracy);
+  void setMaxMoves(int p_maxMoves);
 
-  std::string texturePath;
+  void setMovementRoute(const std::vector<std::shared_ptr<SNode>> &p_route);
+  void moveRoute();
+  void refresh();
+
+protected:
+  int m_maxHP;
+  int m_damage;
+  float m_accuracy;
+  int m_maxMoves;
+
+  std::string m_texturePath;
 
 private:
-  int currentHP;
-  int currentMoves;
+  int m_currentHP;
+  int m_currentMoves;
+
+  std::vector<std::shared_ptr<SNode>> m_route;
 };

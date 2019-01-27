@@ -2,8 +2,8 @@
 
 #include <glm/vec2.hpp>
 
-#include <list>
 #include <memory>
+#include <vector>
 
 class SUnit;
 class SBuilding;
@@ -22,17 +22,25 @@ public:
   std::pair<int, int> getPos();
   int getMovementCost();
   std::shared_ptr<SBuilding> getTileBuilding();
-  std::list<std::shared_ptr<SUnit>> getTileUnits();
+  std::vector<std::shared_ptr<SUnit>> getTileUnits();
+  std::vector<std::shared_ptr<SUnit>>
+  moveUnitsToTile(std::shared_ptr<SNode> p_target);
+  std::vector<std::shared_ptr<SUnit>>
+  moveUnitsToTile(std::shared_ptr<SNode> p_target,
+                  std::vector<std::shared_ptr<SUnit>> p_units);
+  std::shared_ptr<SUnit> moveUnitToTile(std::shared_ptr<SNode> p_target,
+                                        std::shared_ptr<SUnit> p_unit);
 
   void setPos(int x, int y);
   void setPos(const std::pair<int, int> &newPos);
   void setMovementCost(int newMovementCost);
 
-  std::list<std::shared_ptr<SUnit>>
-  removeUnitsFromTile(std::list<std::shared_ptr<SUnit>> units);
+  std::vector<std::shared_ptr<SUnit>>
+  removeUnitsFromTile(std::vector<std::shared_ptr<SUnit>> units);
   std::shared_ptr<SUnit> removeUnitFromTile(std::shared_ptr<SUnit> unit);
 
   void addUnitToTile(std::shared_ptr<SUnit> unit);
+  void addUnitsToTile(std::vector<std::shared_ptr<SUnit>> p_units);
 
   void setTileBuilding(std::shared_ptr<SBuilding> newBuilding);
 
@@ -46,5 +54,5 @@ protected:
 private:
   std::pair<int, int> pos;
   std::shared_ptr<SBuilding> tileBuilding;
-  std::list<std::shared_ptr<SUnit>> presentUnits;
+  std::vector<std::shared_ptr<SUnit>> m_presentUnits;
 };
