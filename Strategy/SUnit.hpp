@@ -17,7 +17,6 @@ public:
   SUnit &operator=(SUnit &&other);
 
   virtual bool isDead();
-  virtual int restoreMoves();
   virtual int applyDamage(int amount);
   virtual int dealDamage(float chance);
 
@@ -29,8 +28,12 @@ public:
   void setAccuracy(int p_accuracy);
   void setMaxMoves(int p_maxMoves);
 
-  void setMovementRoute(const std::vector<std::shared_ptr<SNode>> &p_route);
-  void moveRoute();
+  //  void setMovementRoute(const std::vector<std::shared_ptr<SNode>> &p_route);
+  //  std::vector<std::shared_ptr<SNode>> getMovementRoute();
+  //  std::shared_ptr<SNode> nextRouteNode();
+  //  bool advanceRoute();
+  //  void removeRouteNode(std::shared_ptr<SNode> p_node);
+
   void refresh();
 
 protected:

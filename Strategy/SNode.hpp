@@ -23,29 +23,19 @@ public:
   int getMovementCost();
   std::shared_ptr<SBuilding> getTileBuilding();
   std::vector<std::shared_ptr<SUnit>> getTileUnits();
-  std::vector<std::shared_ptr<SUnit>>
-  moveUnitsToTile(std::shared_ptr<SNode> p_target);
-  std::vector<std::shared_ptr<SUnit>>
-  moveUnitsToTile(std::shared_ptr<SNode> p_target,
-                  std::vector<std::shared_ptr<SUnit>> p_units);
-  std::shared_ptr<SUnit> moveUnitToTile(std::shared_ptr<SNode> p_target,
-                                        std::shared_ptr<SUnit> p_unit);
 
   void setPos(int x, int y);
   void setPos(const std::pair<int, int> &newPos);
   void setMovementCost(int newMovementCost);
 
-  std::vector<std::shared_ptr<SUnit>>
-  removeUnitsFromTile(std::vector<std::shared_ptr<SUnit>> units);
-  std::shared_ptr<SUnit> removeUnitFromTile(std::shared_ptr<SUnit> unit);
-
   void addUnitToTile(std::shared_ptr<SUnit> unit);
-  void addUnitsToTile(std::vector<std::shared_ptr<SUnit>> p_units);
 
   void setTileBuilding(std::shared_ptr<SBuilding> newBuilding);
 
   void setTexturePath(const std::string &newTexturePath);
   std::string &getTexturePath();
+
+  void refresh();
 
 protected:
   std::string texturePath;

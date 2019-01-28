@@ -20,8 +20,7 @@ SGameManager::SGameManager() {
   m_camera->pos = {0, 0};
   m_camera->zoomRate = 3.0f;
   m_camera->cameraSpeed = 500.0f;
-  //  m_camera->defaultZoom = 2.0f;
-  m_camera->defaultZoom = 1.0f;
+  m_camera->defaultZoom = 2.0f;
   m_camera->currentZoom = m_camera->defaultZoom;
   m_camera->viewportWidth = 1280;
   m_camera->viewportHeight = 720;
@@ -84,17 +83,6 @@ void SGameManager::run() {
         int x, y;
         SDL_GetMouseState(&x, &y);
 
-        std::cout << "Click at " << x << " " << y << std::endl;
-        std::cout << "Virtual lick at " << x / m_realVirtualRatio << " "
-                  << y / m_realVirtualRatio << std::endl;
-        auto distanceFromCorner =
-            glm::vec2{1000 * m_aspectRatio - x / m_realVirtualRatio,
-                      1000 - y / m_realVirtualRatio};
-        std::cout << "Distance from corner " << glm::length(distanceFromCorner)
-                  << std::endl;
-        std::cout << "Aspect ratio " << m_aspectRatio << std::endl;
-        ;
-
         if (glm::length(glm::vec2{1000 * m_aspectRatio - x / m_realVirtualRatio,
                                   1000 - y / m_realVirtualRatio}) <= 150) {
           if (e.button.button == SDL_BUTTON_LEFT) {
@@ -117,15 +105,6 @@ void SGameManager::run() {
           if (t != m_selectedTile and m_selectedTile != nullptr and
               t != nullptr) {
             auto path = m_tiles->shortestPath(m_selectedTile, t);
-            //            for (auto &p : path) {
-            //              auto c = p->getPos();
-            //              std::cout << "Go to " << c.first << " " << c.second
-            //              << std::endl;
-            //            }
-            for (auto &u : m_selectedTile->getTileUnits()) {
-              u->setMovementRoute(path);
-              u->moveRoute();
-            }
             m_selectedTile = nullptr;
             m_renderer.resetSelectedTile();
           }
@@ -167,13 +146,5 @@ std::shared_ptr<SNode> SGameManager::getClickedTile(int x, int y) {
 }
 
 void SGameManager::endTurn() {
-  std::cout << "Ending turn" << std::endl;
-  for (auto &t : m_tiles->getTiles()) {
-    auto tpos = t->getPos();
-    //    std::cout << "Refreshing tile at " << tpos.first << " " << tpos.second
-    //              << std::endl;
-    for (auto &u : t->getTileUnits()) {
-      u->refresh();
-    }
-  }
+  std::cout << "Ending turn (doing nothing)" << std::endl;
 }
