@@ -5,6 +5,7 @@
 #include "SNode.hpp"
 #include "SNodeGraph.hpp"
 #include "SUnit.hpp"
+#include "SSprite.hpp"
 
 #include <glm/glm.hpp>
 
@@ -12,6 +13,43 @@
 #include <SDL2/SDL_image.h>
 
 #include <iostream>
+
+RenderRequest::RenderRequest(std::shared_ptr<SSprite> p_sprite, int p_x, int p_y, int p_frameIndex, RenderLocation p_renderLocation){
+    m_sprite = p_sprite;
+    m_x = p_x;
+    m_y = p_y;
+    m_frameIndex = p_frameIndex;
+    m_renderLocation = p_renderLocation;
+}
+
+RenderRequest::RenderRequest(const RenderRequest &other){
+    m_sprite = other.m_sprite;
+    m_x = other.m_x;
+    m_y = other.m_y;
+    m_frameIndex = other.m_frameIndex;
+    m_renderLocation = other.m_renderLocation;
+}
+
+RenderRequest::~RenderRequest(){
+
+}
+
+RenderRequest& RenderRequest::operator=(const RenderRequest& other){
+    m_sprite = other.m_sprite;
+    m_x = other.m_x;
+    m_y = other.m_y;
+    m_frameIndex = other.m_frameIndex;
+    m_renderLocation = other.m_renderLocation;
+    return *this;
+}
+
+bool RenderRequest::operator==(const RenderRequest other){
+    return m_sprite->m_renderPriority == other.m_sprite->m_renderPriority;
+}
+
+bool RenderRequest::operator<(const RenderRequest other){
+    return m_sprite->m_renderPriority < other.m_sprite->m_renderPriority;
+}
 
 SRenderer::SRenderer() {
 
@@ -72,90 +110,106 @@ SRenderer::~SRenderer() {
 }
 
 void SRenderer::render() {
+//  SDL_RenderClear(this->renderer);
+
+
+//  auto dts = m_tiles->getTiles();
+
+//  float virtualRatio =
+//      static_cast<float>(m_camera->viewportWidth) / m_camera->viewportHeight;
+//  float virtualHeight = 1000.0f;
+
+//  float realVirtualRatio = m_camera->viewportHeight / virtualHeight;
+
+//  float tileSize = 60.0f;
+//  float unitSize = 20.0f;
+//  float selectionSize = 80.0f;
+//  SDL_Rect endTurnButtonPos;
+//  endTurnButtonPos.w = 150;
+//  endTurnButtonPos.h = 150;
+//  endTurnButtonPos.x = 1000 * virtualRatio - endTurnButtonPos.w;
+//  endTurnButtonPos.y = 1000 - endTurnButtonPos.h;
+
+//  auto camPos = m_camera->pos;
+//  glm::vec2 drawOffset =
+//      -camPos / m_camera->currentZoom +
+//      glm::vec2(virtualHeight * virtualRatio / 2, virtualHeight / 2);
+
+//  int x, y;
+//  SDL_Rect dstRect;
+//  for (auto &dt : dts) {
+//    std::tie(x, y) = dt->getPos();
+//    dstRect.w = dstRect.h =
+//        tileSize / m_camera->currentZoom * realVirtualRatio + 2;
+
+//    dstRect.x = x * tileSize / m_camera->currentZoom + drawOffset.x;
+//    dstRect.y = y * tileSize / m_camera->currentZoom + drawOffset.y;
+
+//    dstRect.x *= realVirtualRatio;
+//    dstRect.y *= realVirtualRatio;
+
+//    this->renderCenter(this->textures[dt->getTexturePath()], nullptr, dstRect);
+
+//    if (dt == m_selectedTile) {
+//      dstRect.w = dstRect.h =
+//          selectionSize / m_camera->currentZoom * realVirtualRatio;
+//      this->renderCenter(this->textures["./assets/selection.png"], nullptr,
+//                         dstRect);
+//    }
+
+//    if (dt->getTileBuilding() != nullptr) {
+//      dstRect.w = dstRect.h =
+//          tileSize / m_camera->currentZoom * realVirtualRatio;
+//      this->renderCenter(
+//          this->textures[dt->getTileBuilding()->getTexturePath()], nullptr,
+//          dstRect);
+//    }
+//    auto presUnits = dt->getTileUnits();
+//    int numUnits = presUnits.size();
+//    if (numUnits > 0) {
+//      float w = unitSize / 2 * (numUnits - 1) / m_camera->currentZoom *
+//                realVirtualRatio;
+//      float h = unitSize / 4 * (numUnits - 1) / m_camera->currentZoom *
+//                realVirtualRatio;
+//      dstRect.w = dstRect.h =
+//          unitSize / m_camera->currentZoom * realVirtualRatio;
+//      dstRect.x -= w / 2;
+//      dstRect.y -= h / 2;
+//      for (int i = 0; i < numUnits; i++) {
+//        this->renderCenter(this->textures[presUnits[i]->getTexturePath()],
+//                           nullptr, dstRect);
+//        if (numUnits > 1) {
+//          dstRect.x += w / (numUnits - 1);
+//          dstRect.y += h / (numUnits - 1);
+//        }
+//      }
+//    }
+//  }
+
+//  endTurnButtonPos.w *= realVirtualRatio;
+//  endTurnButtonPos.h *= realVirtualRatio;
+//  endTurnButtonPos.x *= realVirtualRatio;
+//  endTurnButtonPos.y *= realVirtualRatio;
+
+//  //  std::cout << "Render end turn button at " << endTurnButtonPos.x << " "
+//  //            << endTurnButtonPos.y << std::endl;
+  m_renderThread.join();
+  m_tmpQueue = std::move(m_drawQueue);
+  m_tmpCamera = *m_camera;
+  m_drawQueue = {};
+  m_renderThread = std::thread(&SRenderer::renderThread, this);
+}
+
+void SRenderer::renderThread(){
   SDL_RenderClear(this->renderer);
-  auto dts = m_tiles->getTiles();
 
-  float virtualRatio =
-      static_cast<float>(m_camera->viewportWidth) / m_camera->viewportHeight;
-  float virtualHeight = 1000.0f;
+//  for (auto& rr : m_tmpQueue){
 
-  float realVirtualRatio = m_camera->viewportHeight / virtualHeight;
+//  }
 
-  float tileSize = 60.0f;
-  float unitSize = 20.0f;
-  float selectionSize = 80.0f;
-  SDL_Rect endTurnButtonPos;
-  endTurnButtonPos.w = 150;
-  endTurnButtonPos.h = 150;
-  endTurnButtonPos.x = 1000 * virtualRatio - endTurnButtonPos.w;
-  endTurnButtonPos.y = 1000 - endTurnButtonPos.h;
 
-  auto camPos = m_camera->pos;
-  glm::vec2 drawOffset =
-      -camPos / m_camera->currentZoom +
-      glm::vec2(virtualHeight * virtualRatio / 2, virtualHeight / 2);
-
-  int x, y;
-  SDL_Rect dstRect;
-  for (auto &dt : dts) {
-    std::tie(x, y) = dt->getPos();
-    dstRect.w = dstRect.h =
-        tileSize / m_camera->currentZoom * realVirtualRatio + 2;
-
-    dstRect.x = x * tileSize / m_camera->currentZoom + drawOffset.x;
-    dstRect.y = y * tileSize / m_camera->currentZoom + drawOffset.y;
-
-    dstRect.x *= realVirtualRatio;
-    dstRect.y *= realVirtualRatio;
-
-    this->renderCenter(this->textures[dt->getTexturePath()], nullptr, dstRect);
-
-    if (dt == m_selectedTile) {
-      dstRect.w = dstRect.h =
-          selectionSize / m_camera->currentZoom * realVirtualRatio;
-      this->renderCenter(this->textures["./assets/selection.png"], nullptr,
-                         dstRect);
-    }
-
-    if (dt->getTileBuilding() != nullptr) {
-      dstRect.w = dstRect.h =
-          tileSize / m_camera->currentZoom * realVirtualRatio;
-      this->renderCenter(
-          this->textures[dt->getTileBuilding()->getTexturePath()], nullptr,
-          dstRect);
-    }
-    auto presUnits = dt->getTileUnits();
-    int numUnits = presUnits.size();
-    if (numUnits > 0) {
-      float w = unitSize / 2 * (numUnits - 1) / m_camera->currentZoom *
-                realVirtualRatio;
-      float h = unitSize / 4 * (numUnits - 1) / m_camera->currentZoom *
-                realVirtualRatio;
-      dstRect.w = dstRect.h =
-          unitSize / m_camera->currentZoom * realVirtualRatio;
-      dstRect.x -= w / 2;
-      dstRect.y -= h / 2;
-      for (int i = 0; i < numUnits; i++) {
-        this->renderCenter(this->textures[presUnits[i]->getTexturePath()],
-                           nullptr, dstRect);
-        if (numUnits > 1) {
-          dstRect.x += w / (numUnits - 1);
-          dstRect.y += h / (numUnits - 1);
-        }
-      }
-    }
-  }
-
-  endTurnButtonPos.w *= realVirtualRatio;
-  endTurnButtonPos.h *= realVirtualRatio;
-  endTurnButtonPos.x *= realVirtualRatio;
-  endTurnButtonPos.y *= realVirtualRatio;
-
-  //  std::cout << "Render end turn button at " << endTurnButtonPos.x << " "
-  //            << endTurnButtonPos.y << std::endl;
-
-  SDL_RenderCopy(renderer, textures["./assets/ui/endTurn.png"], nullptr,
-                 &endTurnButtonPos);
+//  SDL_RenderCopy(renderer, textures["./assets/ui/endTurn.png"], nullptr,
+//                 &endTurnButtonPos);
 
   SDL_RenderPresent(this->renderer);
 }
@@ -175,12 +229,12 @@ void SRenderer::loadTexture(std::string path) {
   this->textures[path] = tex;
 }
 
-inline void SRenderer::renderCenter(SDL_Texture *texture, SDL_Rect *srcrect,
-                                    SDL_Rect dstrect) {
-  dstrect.x -= dstrect.w / 2;
-  dstrect.y -= dstrect.h / 2;
-  SDL_RenderCopy(this->renderer, texture, srcrect, &dstrect);
-}
+//inline void SRenderer::renderCenter(SDL_Texture *texture, SDL_Rect *srcrect,
+//                                    SDL_Rect dstrect) {
+//  dstrect.x -= dstrect.w / 2;
+//  dstrect.y -= dstrect.h / 2;
+//  SDL_RenderCopy(this->renderer, texture, srcrect, &dstrect);
+//}
 
 void SRenderer::setRenderCamera(std::shared_ptr<SCamera> p_camera) {
   m_camera = p_camera;
@@ -188,12 +242,16 @@ void SRenderer::setRenderCamera(std::shared_ptr<SCamera> p_camera) {
   m_camera->viewportHeight = m_screenHeight;
 }
 
-void SRenderer::setRenderTiles(std::shared_ptr<SNodeGraph> p_renderTiles) {
-  m_tiles = p_renderTiles;
+void SRenderer::submitRenderRequest(std::shared_ptr<SSprite> p_sprite, int x, int y, int frameIndex, RenderLocation renderLocation){
+    m_drawQueue.push(RenderRequest{p_sprite, x, y, frameIndex, renderLocation});
 }
 
-void SRenderer::setSelectedTile(std::shared_ptr<SNode> p_tile) {
-  m_selectedTile = p_tile;
-}
+//void SRenderer::setRenderTiles(std::shared_ptr<SNodeGraph> p_renderTiles) {
+//  m_tiles = p_renderTiles;
+//}
 
-void SRenderer::resetSelectedTile() { m_selectedTile = nullptr; }
+//void SRenderer::setSelectedTile(std::shared_ptr<SNode> p_tile) {
+//  m_selectedTile = p_tile;
+//}
+
+//void SRenderer::resetSelectedTile() { m_selectedTile = nullptr; }
