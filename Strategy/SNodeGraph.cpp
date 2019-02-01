@@ -2,6 +2,7 @@
 
 #include "SBuilding.hpp"
 #include "SNode.hpp"
+#include "SSprite.hpp"
 #include "SUnit.hpp"
 
 #include <algorithm>
@@ -17,15 +18,22 @@ SNodeGraph::SNodeGraph(int p_width, int p_height, bool p_bWrapX,
   m_bWrapX = p_bWrapX;
   m_bWrapY = p_bWrapY;
 
+  std::shared_ptr<SSprite> defaultNodeSprite =
+      std::make_shared<SSprite>("./assets/tile.png", 1, 60, 1);
+  std::shared_ptr<SSprite> defaultBuildingSprite =
+      std::make_shared<SSprite>("./assets/building.png", 1, 60, 2);
+  std::shared_ptr<SSprite> defaultUnitSprite =
+      std::make_shared<SSprite>("./assets/spearman.png", 1, 10, 3);
+
   SNode defaultNode{};
-  defaultNode.setTexturePath("./assets/tile.png");
+  defaultNode.setSprite(defaultNodeSprite);
   defaultNode.setMovementCost(1);
 
   SBuilding defaultBuilding{};
-  defaultBuilding.setTexturePath("./assets/building.png");
+  defaultBuilding.setSprite(defaultBuildingSprite);
 
   SUnit spearman{};
-  spearman.setTexturePath("./assets/spearman.png");
+  spearman.setSprite(defaultUnitSprite);
   spearman.setMaxHP(10);
   spearman.setDamage(1);
   spearman.setAccuracy(1);

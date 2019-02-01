@@ -4,8 +4,8 @@
 #include "SCamera.hpp"
 #include "SNode.hpp"
 #include "SNodeGraph.hpp"
-#include "SUnit.hpp"
 #include "SSprite.hpp"
+#include "SUnit.hpp"
 
 #include <glm/glm.hpp>
 
@@ -14,41 +14,42 @@
 
 #include <iostream>
 
-RenderRequest::RenderRequest(std::shared_ptr<SSprite> p_sprite, int p_x, int p_y, int p_frameIndex, RenderLocation p_renderLocation){
-    m_sprite = p_sprite;
-    m_x = p_x;
-    m_y = p_y;
-    m_frameIndex = p_frameIndex;
-    m_renderLocation = p_renderLocation;
+RenderRequest::RenderRequest(std::shared_ptr<SSprite> p_sprite, int p_x,
+                             int p_y, int p_frameIndex,
+                             RenderLocation p_renderLocation) {
+  m_sprite = p_sprite;
+  m_x = p_x;
+  m_y = p_y;
+  m_frameIndex = p_frameIndex;
+  m_renderLocation = p_renderLocation;
 }
 
-RenderRequest::RenderRequest(const RenderRequest &other){
-    m_sprite = other.m_sprite;
-    m_x = other.m_x;
-    m_y = other.m_y;
-    m_frameIndex = other.m_frameIndex;
-    m_renderLocation = other.m_renderLocation;
+RenderRequest::RenderRequest(const RenderRequest &other) {
+  m_sprite = other.m_sprite;
+  m_x = other.m_x;
+  m_y = other.m_y;
+  m_frameIndex = other.m_frameIndex;
+  m_renderLocation = other.m_renderLocation;
 }
 
-RenderRequest::~RenderRequest(){
+RenderRequest::~RenderRequest() {}
 
+RenderRequest &RenderRequest::operator=(const RenderRequest &other) {
+  m_sprite = other.m_sprite;
+  m_x = other.m_x;
+  m_y = other.m_y;
+  m_frameIndex = other.m_frameIndex;
+  m_renderLocation = other.m_renderLocation;
+  return *this;
 }
 
-RenderRequest& RenderRequest::operator=(const RenderRequest& other){
-    m_sprite = other.m_sprite;
-    m_x = other.m_x;
-    m_y = other.m_y;
-    m_frameIndex = other.m_frameIndex;
-    m_renderLocation = other.m_renderLocation;
-    return *this;
+bool operator==(const RenderRequest &lhs, const RenderRequest &rhs) {
+  return lhs.m_sprite->m_renderPriority == rhs.m_sprite->m_renderPriority;
 }
 
-bool RenderRequest::operator==(const RenderRequest other){
-    return m_sprite->m_renderPriority == other.m_sprite->m_renderPriority;
-}
-
-bool RenderRequest::operator<(const RenderRequest other){
-    return m_sprite->m_renderPriority < other.m_sprite->m_renderPriority;
+bool operator<(const RenderRequest &lhs, const RenderRequest &rhs) {
+  // Sign swap so that lower priority sprites appear first in priority queue
+  return lhs.m_sprite->m_renderPriority > rhs.m_sprite->m_renderPriority;
 }
 
 SRenderer::SRenderer() {
@@ -66,10 +67,8 @@ SRenderer::SRenderer() {
   std::cout << "Dm size " << dm.w << " " << dm.h << std::endl;
   m_screenWidth = dm.w * (3.f / 4.f);
   m_screenHeight = dm.h * (3.f / 4.f);
-  //  m_screenWidth = 1600;
-  //  m_screenHeight = 1000;
-  //  const int screenWidth = 2100;
-  //  const int screenHeight = 900;
+  m_screenRatio = float(m_screenWidth) / m_screenHeight;
+  m_realVirtualRatio = m_screenHeight / 1000.0f;
 
   window = SDL_CreateWindow("Strategy", SDL_WINDOWPOS_UNDEFINED,
                             SDL_WINDOWPOS_UNDEFINED, m_screenWidth,
@@ -79,9 +78,9 @@ SRenderer::SRenderer() {
                              std::string(SDL_GetError()));
   }
 
-  this->renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+  m_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-  SDL_SetRenderDrawColor(this->renderer, 0x00, 0x80, 0x80, 0x00);
+  SDL_SetRenderDrawColor(m_renderer, 0x00, 0x80, 0x80, 0x00);
 
   std::string nodeTexturePath = "./assets/tile.png";
   std::string buildingTexturePath = "./assets/building.png";
@@ -94,6 +93,8 @@ SRenderer::SRenderer() {
   this->loadTexture(unitTexturePath);
   this->loadTexture(selectionTexturePath);
   this->loadTexture(endTurnButtonTexturePath);
+
+  m_bFirstTime = true;
 }
 
 SRenderer::~SRenderer() {
@@ -102,7 +103,7 @@ SRenderer::~SRenderer() {
     SDL_DestroyTexture(t.second);
   }
 
-  SDL_DestroyRenderer(this->renderer);
+  SDL_DestroyRenderer(m_renderer);
   SDL_DestroyWindow(this->window);
 
   IMG_Quit();
@@ -110,108 +111,67 @@ SRenderer::~SRenderer() {
 }
 
 void SRenderer::render() {
-//  SDL_RenderClear(this->renderer);
-
-
-//  auto dts = m_tiles->getTiles();
-
-//  float virtualRatio =
-//      static_cast<float>(m_camera->viewportWidth) / m_camera->viewportHeight;
-//  float virtualHeight = 1000.0f;
-
-//  float realVirtualRatio = m_camera->viewportHeight / virtualHeight;
-
-//  float tileSize = 60.0f;
-//  float unitSize = 20.0f;
-//  float selectionSize = 80.0f;
-//  SDL_Rect endTurnButtonPos;
-//  endTurnButtonPos.w = 150;
-//  endTurnButtonPos.h = 150;
-//  endTurnButtonPos.x = 1000 * virtualRatio - endTurnButtonPos.w;
-//  endTurnButtonPos.y = 1000 - endTurnButtonPos.h;
-
-//  auto camPos = m_camera->pos;
-//  glm::vec2 drawOffset =
-//      -camPos / m_camera->currentZoom +
-//      glm::vec2(virtualHeight * virtualRatio / 2, virtualHeight / 2);
-
-//  int x, y;
-//  SDL_Rect dstRect;
-//  for (auto &dt : dts) {
-//    std::tie(x, y) = dt->getPos();
-//    dstRect.w = dstRect.h =
-//        tileSize / m_camera->currentZoom * realVirtualRatio + 2;
-
-//    dstRect.x = x * tileSize / m_camera->currentZoom + drawOffset.x;
-//    dstRect.y = y * tileSize / m_camera->currentZoom + drawOffset.y;
-
-//    dstRect.x *= realVirtualRatio;
-//    dstRect.y *= realVirtualRatio;
-
-//    this->renderCenter(this->textures[dt->getTexturePath()], nullptr, dstRect);
-
-//    if (dt == m_selectedTile) {
-//      dstRect.w = dstRect.h =
-//          selectionSize / m_camera->currentZoom * realVirtualRatio;
-//      this->renderCenter(this->textures["./assets/selection.png"], nullptr,
-//                         dstRect);
-//    }
-
-//    if (dt->getTileBuilding() != nullptr) {
-//      dstRect.w = dstRect.h =
-//          tileSize / m_camera->currentZoom * realVirtualRatio;
-//      this->renderCenter(
-//          this->textures[dt->getTileBuilding()->getTexturePath()], nullptr,
-//          dstRect);
-//    }
-//    auto presUnits = dt->getTileUnits();
-//    int numUnits = presUnits.size();
-//    if (numUnits > 0) {
-//      float w = unitSize / 2 * (numUnits - 1) / m_camera->currentZoom *
-//                realVirtualRatio;
-//      float h = unitSize / 4 * (numUnits - 1) / m_camera->currentZoom *
-//                realVirtualRatio;
-//      dstRect.w = dstRect.h =
-//          unitSize / m_camera->currentZoom * realVirtualRatio;
-//      dstRect.x -= w / 2;
-//      dstRect.y -= h / 2;
-//      for (int i = 0; i < numUnits; i++) {
-//        this->renderCenter(this->textures[presUnits[i]->getTexturePath()],
-//                           nullptr, dstRect);
-//        if (numUnits > 1) {
-//          dstRect.x += w / (numUnits - 1);
-//          dstRect.y += h / (numUnits - 1);
-//        }
-//      }
-//    }
-//  }
-
-//  endTurnButtonPos.w *= realVirtualRatio;
-//  endTurnButtonPos.h *= realVirtualRatio;
-//  endTurnButtonPos.x *= realVirtualRatio;
-//  endTurnButtonPos.y *= realVirtualRatio;
-
-//  //  std::cout << "Render end turn button at " << endTurnButtonPos.x << " "
-//  //            << endTurnButtonPos.y << std::endl;
-  m_renderThread.join();
+  if (!m_bFirstTime) {
+    m_renderThread.join();
+  } else {
+    m_bFirstTime = false;
+  }
   m_tmpQueue = std::move(m_drawQueue);
-  m_tmpCamera = *m_camera;
+  m_tmpCameraPos = m_camera->pos;
+  m_tmpCameraZoom = m_camera->currentZoom;
   m_drawQueue = {};
   m_renderThread = std::thread(&SRenderer::renderThread, this);
 }
 
-void SRenderer::renderThread(){
-  SDL_RenderClear(this->renderer);
+void SRenderer::renderThread() {
+  std::cout << "Called render thread" << std::endl;
+  SDL_RenderClear(m_renderer);
 
-//  for (auto& rr : m_tmpQueue){
+  SDL_Rect dstRect;
+  SDL_Rect srcRect;
 
-//  }
+  glm::vec2 drawOffset =
+      glm::vec2(500 * m_screenRatio, 500) - m_tmpCameraPos / m_tmpCameraZoom;
 
-
-//  SDL_RenderCopy(renderer, textures["./assets/ui/endTurn.png"], nullptr,
-//                 &endTurnButtonPos);
-
-  SDL_RenderPresent(this->renderer);
+  while (!m_tmpQueue.empty()) {
+    auto rr = m_tmpQueue.top();
+    m_tmpQueue.pop();
+    switch (rr.m_renderLocation) {
+    case RenderLocation::RENDER_CENTER:
+      rr.m_x -= rr.m_sprite->m_size / 2;
+      rr.m_y -= rr.m_sprite->m_size / 2;
+      break;
+    case RenderLocation::RENDER_TOP_LEFT:
+      break;
+    case RenderLocation::RENDER_TOP_RIGHT:
+      rr.m_x -= rr.m_sprite->m_size;
+      break;
+    case RenderLocation::RENDER_BOTTOM_LEFT:
+      rr.m_y -= rr.m_sprite->m_size;
+      break;
+    case RenderLocation::RENDER_BOTTOM_RIGHT:
+      rr.m_x -= rr.m_sprite->m_size;
+      rr.m_y -= rr.m_sprite->m_size;
+      break;
+    }
+    dstRect.w = dstRect.h =
+        int(rr.m_sprite->m_tileSize / m_tmpCameraZoom * m_realVirtualRatio + 2);
+    dstRect.x =
+        int((rr.m_x / m_tmpCameraZoom + drawOffset.x) * m_realVirtualRatio);
+    dstRect.y =
+        int((rr.m_y / m_tmpCameraZoom + drawOffset.y) * m_realVirtualRatio);
+    if (rr.m_sprite->m_numTiles == 1) {
+      SDL_RenderCopy(m_renderer, textures[rr.m_sprite->m_texturePath], nullptr,
+                     &dstRect);
+    } else {
+      srcRect.w = srcRect.h = rr.m_sprite->m_tileSize;
+      srcRect.x = srcRect.w * (rr.m_frameIndex % rr.m_sprite->m_numTilesAxis);
+      srcRect.y = srcRect.h * (rr.m_frameIndex / rr.m_sprite->m_numTilesAxis);
+      SDL_RenderCopy(m_renderer, textures[rr.m_sprite->m_texturePath], &srcRect,
+                     &dstRect);
+    }
+  }
+  SDL_RenderPresent(m_renderer);
 }
 
 void SRenderer::loadTexture(std::string path) {
@@ -220,7 +180,7 @@ void SRenderer::loadTexture(std::string path) {
     throw std::runtime_error("Failed to load texture from " + path +
                              " SDL_image error " + IMG_GetError());
   }
-  SDL_Texture *tex = SDL_CreateTextureFromSurface(this->renderer, tmpSurf);
+  SDL_Texture *tex = SDL_CreateTextureFromSurface(m_renderer, tmpSurf);
   if (tex == nullptr) {
     throw std::runtime_error("Failed to create texture SDL error " +
                              std::string(SDL_GetError()));
@@ -229,29 +189,14 @@ void SRenderer::loadTexture(std::string path) {
   this->textures[path] = tex;
 }
 
-//inline void SRenderer::renderCenter(SDL_Texture *texture, SDL_Rect *srcrect,
-//                                    SDL_Rect dstrect) {
-//  dstrect.x -= dstrect.w / 2;
-//  dstrect.y -= dstrect.h / 2;
-//  SDL_RenderCopy(this->renderer, texture, srcrect, &dstrect);
-//}
-
 void SRenderer::setRenderCamera(std::shared_ptr<SCamera> p_camera) {
   m_camera = p_camera;
   m_camera->viewportWidth = m_screenWidth;
   m_camera->viewportHeight = m_screenHeight;
 }
 
-void SRenderer::submitRenderRequest(std::shared_ptr<SSprite> p_sprite, int x, int y, int frameIndex, RenderLocation renderLocation){
-    m_drawQueue.push(RenderRequest{p_sprite, x, y, frameIndex, renderLocation});
+void SRenderer::submitRenderRequest(std::shared_ptr<SSprite> p_sprite, int x,
+                                    int y, int frameIndex,
+                                    RenderLocation renderLocation) {
+  m_drawQueue.push(RenderRequest{p_sprite, x, y, frameIndex, renderLocation});
 }
-
-//void SRenderer::setRenderTiles(std::shared_ptr<SNodeGraph> p_renderTiles) {
-//  m_tiles = p_renderTiles;
-//}
-
-//void SRenderer::setSelectedTile(std::shared_ptr<SNode> p_tile) {
-//  m_selectedTile = p_tile;
-//}
-
-//void SRenderer::resetSelectedTile() { m_selectedTile = nullptr; }

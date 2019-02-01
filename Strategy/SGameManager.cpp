@@ -3,6 +3,7 @@
 #include "SCamera.hpp"
 #include "SNode.hpp"
 #include "SNodeGraph.hpp"
+#include "SSprite.hpp"
 #include "SUnit.hpp"
 
 #include <glm/glm.hpp>
@@ -26,7 +27,7 @@ SGameManager::SGameManager() {
   m_camera->viewportHeight = 720;
 
   m_renderer.setRenderCamera(m_camera);
-  m_renderer.setRenderTiles(m_tiles);
+  //  m_renderer.setRenderTiles(m_tiles);
 
   m_aspectRatio = float(m_camera->viewportWidth) / m_camera->viewportHeight;
   m_realVirtualRatio = m_camera->viewportHeight / 1000.0f;
@@ -95,10 +96,8 @@ void SGameManager::run() {
           if (t != nullptr and t->getTileUnits().size() > 0) {
             if (t == m_selectedTile) {
               m_selectedTile = nullptr;
-              m_renderer.resetSelectedTile();
             } else {
               m_selectedTile = t;
-              m_renderer.setSelectedTile(m_selectedTile);
             }
           }
         } else if (e.button.button == SDL_BUTTON_RIGHT) {
@@ -106,13 +105,22 @@ void SGameManager::run() {
               t != nullptr) {
             auto path = m_tiles->shortestPath(m_selectedTile, t);
             m_selectedTile = nullptr;
-            m_renderer.resetSelectedTile();
           }
         }
       }
     }
 
     updateCamera();
+
+    for (auto &t : m_tiles->getTiles()) {
+      auto s = t->getSprite();
+      int x, y;
+      std::tie(x, y) = t->getPos();
+      x *= s->m_size;
+      y *= s->m_size;
+      m_renderer.submitRenderRequest(t->getSprite(), x, y, s->m_renderPriority,
+                                     RenderLocation::RENDER_CENTER);
+    }
 
     m_renderer.render();
   }

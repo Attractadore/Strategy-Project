@@ -8,12 +8,12 @@
 SNode::SNode() {}
 
 SNode::SNode(const SNode &other) {
-  this->texturePath = other.texturePath;
+  m_sprite = other.m_sprite;
   this->movementCost = other.movementCost;
 }
 
 SNode::SNode(SNode &&other) {
-  this->texturePath = other.texturePath;
+  m_sprite = other.m_sprite;
   this->movementCost = other.movementCost;
 }
 
@@ -22,13 +22,13 @@ SNode::SNode(int x, int y) { this->pos = std::make_pair(x, y); }
 SNode::~SNode() {}
 
 SNode &SNode::operator=(const SNode &other) {
-  this->texturePath = other.texturePath;
+  m_sprite = other.m_sprite;
   this->movementCost = other.movementCost;
   return *this;
 }
 
 SNode &SNode::operator=(SNode &&other) {
-  this->texturePath = other.texturePath;
+  m_sprite = other.m_sprite;
   this->movementCost = other.movementCost;
   return *this;
 }
@@ -61,10 +61,10 @@ void SNode::addUnitToTile(std::shared_ptr<SUnit> unit) {
   m_presentUnits.push_back(unit);
 }
 
-void SNode::setTexturePath(const std::string &newTexturePath) {
-  this->texturePath = newTexturePath;
+void SNode::setSprite(std::shared_ptr<SSprite> newSprite) {
+  m_sprite = newSprite;
 }
 
-std::string &SNode::getTexturePath() { return this->texturePath; }
+std::shared_ptr<SSprite> SNode::getSprite() { return m_sprite; }
 
 void SNode::refresh() {}

@@ -5,6 +5,7 @@
 #include <vector>
 
 class SNode;
+struct SSprite;
 
 class SUnit {
 public:
@@ -20,19 +21,13 @@ public:
   virtual int applyDamage(int amount);
   virtual int dealDamage(float chance);
 
-  std::string &getTexturePath();
-  void setTexturePath(const std::string &texturePath);
+  std::shared_ptr<SSprite> getSprite();
+  void setSprite(std::shared_ptr<SSprite> newSprite);
 
   void setMaxHP(int p_maxHP);
   void setDamage(int p_damage);
   void setAccuracy(int p_accuracy);
   void setMaxMoves(int p_maxMoves);
-
-  //  void setMovementRoute(const std::vector<std::shared_ptr<SNode>> &p_route);
-  //  std::vector<std::shared_ptr<SNode>> getMovementRoute();
-  //  std::shared_ptr<SNode> nextRouteNode();
-  //  bool advanceRoute();
-  //  void removeRouteNode(std::shared_ptr<SNode> p_node);
 
   void refresh();
 
@@ -42,7 +37,7 @@ protected:
   float m_accuracy;
   int m_maxMoves;
 
-  std::string m_texturePath;
+  std::shared_ptr<SSprite> m_sprite;
 
 private:
   int m_currentHP;

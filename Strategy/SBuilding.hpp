@@ -1,6 +1,9 @@
 #pragma once
 
+#include <memory>
 #include <string>
+
+struct SSprite;
 
 class SBuilding {
 public:
@@ -12,9 +15,9 @@ public:
   SBuilding &operator=(const SBuilding &other);
   SBuilding &operator=(SBuilding &&other);
 
-  void setTexturePath(const std::string &newTexturePath);
-  std::string &getTexturePath();
+  std::shared_ptr<SSprite> getSprite();
+  void setSprite(std::shared_ptr<SSprite> newSprite);
 
 protected:
-  std::string texturePath;
+  std::shared_ptr<SSprite> m_sprite;
 };

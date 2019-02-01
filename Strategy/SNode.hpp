@@ -7,6 +7,7 @@
 
 class SUnit;
 class SBuilding;
+struct SSprite;
 
 class SNode {
 public:
@@ -32,13 +33,13 @@ public:
 
   void setTileBuilding(std::shared_ptr<SBuilding> newBuilding);
 
-  void setTexturePath(const std::string &newTexturePath);
-  std::string &getTexturePath();
+  void setSprite(std::shared_ptr<SSprite> newSprite);
+  std::shared_ptr<SSprite> getSprite();
 
   void refresh();
 
 protected:
-  std::string texturePath;
+  std::shared_ptr<SSprite> m_sprite;
   int movementCost;
 
 private:

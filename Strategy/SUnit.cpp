@@ -13,7 +13,7 @@ SUnit::SUnit(const SUnit &other) {
   m_accuracy = other.m_accuracy;
   m_maxMoves = other.m_maxMoves;
 
-  m_texturePath = other.m_texturePath;
+  m_sprite = other.m_sprite;
 
   m_currentHP = m_maxHP;
   m_currentMoves = m_maxMoves;
@@ -25,7 +25,7 @@ SUnit::SUnit(SUnit &&other) {
   m_accuracy = other.m_accuracy;
   m_maxMoves = other.m_maxMoves;
 
-  m_texturePath = other.m_texturePath;
+  m_sprite = other.m_sprite;
 
   m_currentHP = m_maxHP;
   m_currentMoves = m_maxMoves;
@@ -39,7 +39,7 @@ SUnit &SUnit::operator=(const SUnit &other) {
   m_accuracy = other.m_accuracy;
   m_maxMoves = other.m_maxMoves;
 
-  m_texturePath = other.m_texturePath;
+  m_sprite = other.m_sprite;
 
   m_currentHP = m_maxHP;
   m_currentMoves = m_maxMoves;
@@ -53,7 +53,7 @@ SUnit &SUnit::operator=(SUnit &&other) {
   m_accuracy = other.m_accuracy;
   m_maxMoves = other.m_maxMoves;
 
-  m_texturePath = other.m_texturePath;
+  m_sprite = other.m_sprite;
 
   m_currentHP = m_maxHP;
   m_currentMoves = m_maxMoves;
@@ -62,12 +62,6 @@ SUnit &SUnit::operator=(SUnit &&other) {
 }
 
 bool SUnit::isDead() { return m_currentHP <= 0; }
-
-// int SUnit::restoreMoves() {
-//  int dm = m_maxMoves - m_currentMoves;
-//  m_currentMoves = SUnit::m_maxMoves;
-//  return dm;
-//}
 
 int SUnit::applyDamage(int amount) {
   int dHP = std::max(amount, m_currentHP);
@@ -83,10 +77,10 @@ int SUnit::dealDamage(float chance) {
   }
 }
 
-std::string &SUnit::getTexturePath() { return m_texturePath; }
+std::shared_ptr<SSprite> SUnit::getSprite() { return m_sprite; }
 
-void SUnit::setTexturePath(const std::string &newTexturePath) {
-  m_texturePath = newTexturePath;
+void SUnit::setSprite(std::shared_ptr<SSprite> newSprite) {
+  m_sprite = newSprite;
 }
 
 void SUnit::setMaxHP(int p_maxHP) { m_maxHP = p_maxHP; }
@@ -96,65 +90,5 @@ void SUnit::setDamage(int p_damage) { m_damage = p_damage; }
 void SUnit::setAccuracy(int p_accuracy) { m_accuracy = p_accuracy; }
 
 void SUnit::setMaxMoves(int p_maxMoves) { m_maxMoves = p_maxMoves; }
-
-// void SUnit::setMovementRoute(
-//    const std::vector<std::shared_ptr<SNode>> &p_route) {
-//  m_route = p_route;
-//  std::reverse(m_route.begin(), m_route.end());
-//}
-
-// std::vector<std::shared_ptr<SNode>> SUnit::getMovementRoute() {
-//  auto tmp = m_route;
-//  std::reverse(tmp.begin(), tmp.end());
-//  return tmp;
-//}
-
-// std::shared_ptr<SNode> SUnit::nextRouteNode() {
-//  if (m_route.size() == 0) {
-//    return nullptr;
-//  }
-//  return m_route.back();
-//}
-
-// bool SUnit::advanceRoute() {
-//  if (m_route.size() == 0 or m_currentMoves <= 0) {
-//    return false;
-//  }
-//  m_route.pop_back();
-//  return true;
-//}
-
-// void SUnit::removeRouteNode(std::shared_ptr<SNode> p_node) {
-//  auto it = std::find(m_route.begin(), m_route.end(), p_node);
-//  if (it != m_route.end()) {
-//    m_route.erase(it);
-//  }
-//}
-
-// void SUnit::moveRoute() {
-//  while (m_currentMoves > 0) {
-//    auto n = m_route.back();
-//    auto npos = n->getPos();
-//    //    std::cout << "Currently at tile at " << npos.first << " " <<
-//    //    npos.second
-//    //              << std::endl;
-//    m_route.pop_back();
-//    if (m_route.size() == 0) {
-//      break;
-//    }
-//    n->moveUnitToTile(m_route.back(), std::shared_ptr<SUnit>(this));
-//    //    std::cout << "Moved unit to next tile " << std::endl;
-//    n = m_route.back();
-//    npos = n->getPos();
-//    //    std::cout << "Now at tile at " << npos.first << " " << npos.second
-//    //              << std::endl;
-//    //    std::cout << "Number of present units " << n->getTileUnits().size()
-//    //              << std::endl;
-//    //    std::cout << "Present unit is self " << std::boolalpha
-//    //              << (std::shared_ptr<SUnit>(this) == n->getTileUnits()[0])
-//    //              << std::endl;
-//    m_currentMoves -= m_route.back()->getMovementCost();
-//  }
-//}
 
 void SUnit::refresh() { m_currentMoves = m_maxMoves; }
