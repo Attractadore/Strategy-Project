@@ -124,7 +124,6 @@ void SRenderer::render() {
 }
 
 void SRenderer::renderThread() {
-  std::cout << "Called render thread" << std::endl;
   SDL_RenderClear(m_renderer);
 
   SDL_Rect dstRect;

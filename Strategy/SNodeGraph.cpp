@@ -22,8 +22,6 @@ SNodeGraph::SNodeGraph(int p_width, int p_height, bool p_bWrapX,
       std::make_shared<SSprite>("./assets/tile.png", 1, 60, 1);
   std::shared_ptr<SSprite> defaultBuildingSprite =
       std::make_shared<SSprite>("./assets/building.png", 1, 60, 2);
-  std::shared_ptr<SSprite> defaultUnitSprite =
-      std::make_shared<SSprite>("./assets/spearman.png", 1, 10, 3);
 
   SNode defaultNode{};
   defaultNode.setSprite(defaultNodeSprite);
@@ -32,24 +30,18 @@ SNodeGraph::SNodeGraph(int p_width, int p_height, bool p_bWrapX,
   SBuilding defaultBuilding{};
   defaultBuilding.setSprite(defaultBuildingSprite);
 
-  SUnit spearman{};
-  spearman.setSprite(defaultUnitSprite);
-  spearman.setMaxHP(10);
-  spearman.setDamage(1);
-  spearman.setAccuracy(1);
-  spearman.setMaxMoves(1);
-
   m_tiles = std::vector<std::shared_ptr<SNode>>(m_width * m_height);
   for (int i = 0; i < m_width; i++) {
     for (int j = 0; j < m_height; j++) {
       auto newNode = std::make_shared<SNode>(defaultNode);
       newNode->setPos(i, j);
-      if (i % 4 == j % 7 - 3) {
-        //        newNode->setTileBuilding(std::make_shared<SBuilding>(defaultBuilding));
-        for (int k = 0; k < 1; k++) {
-          newNode->addUnitToTile(std::make_shared<SUnit>(spearman));
-        }
-      }
+      //      if (i % 4 == j % 7 - 3) {
+      //        //
+      //        newNode->setTileBuilding(std::make_shared<SBuilding>(defaultBuilding));
+      //        for (int k = 0; k < 1; k++) {
+      //          newNode->addUnitToTile(std::make_shared<SUnit>(spearman));
+      //        }
+      //      }
       m_tiles[i + j * m_width] = newNode;
     }
   }

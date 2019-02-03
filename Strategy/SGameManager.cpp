@@ -14,8 +14,13 @@
 #include <iostream>
 #include <thread>
 
+#include <cmath>
+
 SGameManager::SGameManager() {
-  m_tiles = std::make_shared<SNodeGraph>(10, 10, false, false);
+  m_worldWidth = 10;
+  m_worldHeight = 10;
+  m_tiles =
+      std::make_shared<SNodeGraph>(m_worldWidth, m_worldHeight, false, false);
   m_camera = std::make_shared<SCamera>();
 
   m_camera->pos = {0, 0};
@@ -27,23 +32,46 @@ SGameManager::SGameManager() {
   m_camera->viewportHeight = 720;
 
   m_renderer.setRenderCamera(m_camera);
-  //  m_renderer.setRenderTiles(m_tiles);
 
   m_aspectRatio = float(m_camera->viewportWidth) / m_camera->viewportHeight;
   m_realVirtualRatio = m_camera->viewportHeight / 1000.0f;
   m_maxFPS = 120;
   m_maxFrameTime = 1.0f / m_maxFPS;
+
+  std::shared_ptr<SSprite> defaultUnitSprite =
+      std::make_shared<SSprite>("./assets/spearman.png", 1, 10, 3);
+  m_selectionSprite =
+      std::make_shared<SSprite>("./assets/selection.png", 1, 60, 4);
+
+  SUnit spearman{};
+  spearman.setSprite(defaultUnitSprite);
+  spearman.setMaxHP(10);
+  spearman.setDamage(1);
+  spearman.setAccuracy(1);
+  spearman.setMaxMoves(1);
+
+  m_gen.seed(std::random_device()());
+
+  std::uniform_int_distribution<> distX(0, m_worldWidth - 1);
+  std::uniform_int_distribution<> distY(0, m_worldHeight - 1);
+
+  for (int i = 0; i < m_worldWidth * 2; i++) {
+    //  for (int i = 0; i < 1; i++) {
+    int x = distX(m_gen);
+    int y = distY(m_gen);
+    auto targetTile = m_tiles->getTileAt(x, y);
+    m_units[targetTile].push_back(std::make_shared<SUnit>(spearman));
+  }
+
+  m_bQuit = false;
 }
 
 SGameManager::~SGameManager() {}
 
 void SGameManager::run() {
-  bool bQuit = false;
-  SDL_Event e;
-
   auto time = std::chrono::steady_clock::now();
 
-  while (!bQuit) {
+  while (!m_bQuit) {
 
     auto newTime = std::chrono::steady_clock::now();
     m_deltaTime =
@@ -58,71 +86,116 @@ void SGameManager::run() {
           0, static_cast<int>(1000000 * (m_maxFrameTime - m_deltaTime)))));
     }
 
-    while (SDL_PollEvent(&e) != 0) {
-      //      std::cout << "Got event" << std::endl;
-      if (e.type == SDL_QUIT) {
-        bQuit = true;
-      } else if (e.type == SDL_KEYDOWN) {
-        auto ks = e.key.keysym.scancode;
-        switch (ks) {
-        case SDL_SCANCODE_W:
-          m_cameraMovementInput.y -= 1;
-          break;
-        case SDL_SCANCODE_S:
-          m_cameraMovementInput.y += 1;
-          break;
-        case SDL_SCANCODE_A:
-          m_cameraMovementInput.x -= 1;
-          break;
-        case SDL_SCANCODE_D:
-          m_cameraMovementInput.x += 1;
-          break;
-        }
-      } else if (e.type == SDL_MOUSEWHEEL) {
-        m_cameraZoomInput = e.wheel.y;
-      } else if (e.type == SDL_MOUSEBUTTONDOWN) {
-        int x, y;
-        SDL_GetMouseState(&x, &y);
-
-        if (glm::length(glm::vec2{1000 * m_aspectRatio - x / m_realVirtualRatio,
-                                  1000 - y / m_realVirtualRatio}) <= 150) {
-          if (e.button.button == SDL_BUTTON_LEFT) {
-            endTurn();
-          }
-        }
-
-        auto t = getClickedTile(x, y);
-        if (e.button.button == SDL_BUTTON_LEFT) {
-          if (t != nullptr and t->getTileUnits().size() > 0) {
-            if (t == m_selectedTile) {
-              m_selectedTile = nullptr;
-            } else {
-              m_selectedTile = t;
-            }
-          }
-        } else if (e.button.button == SDL_BUTTON_RIGHT) {
-          if (t != m_selectedTile and m_selectedTile != nullptr and
-              t != nullptr) {
-            auto path = m_tiles->shortestPath(m_selectedTile, t);
-            m_selectedTile = nullptr;
-          }
-        }
-      }
-    }
+    handleInput();
 
     updateCamera();
 
-    for (auto &t : m_tiles->getTiles()) {
-      auto s = t->getSprite();
-      int x, y;
-      std::tie(x, y) = t->getPos();
-      x *= s->m_size;
-      y *= s->m_size;
-      m_renderer.submitRenderRequest(t->getSprite(), x, y, s->m_renderPriority,
+    for (auto &tile : m_tiles->getTiles()) {
+      auto sprite = tile->getSprite();
+      float x, y;
+      std::tie(x, y) = tile->getPos();
+      x *= sprite->m_size;
+      y *= sprite->m_size;
+      m_renderer.submitRenderRequest(tile->getSprite(), x, y, 0,
                                      RenderLocation::RENDER_CENTER);
     }
 
+    if (m_selectedTile != nullptr) {
+      auto tileSprite = m_selectedTile->getSprite();
+      float x, y;
+      std::tie(x, y) = m_selectedTile->getPos();
+      x *= tileSprite->m_size;
+      y *= tileSprite->m_size;
+
+      m_renderer.submitRenderRequest(m_selectionSprite, x, y, 0,
+                                     RenderLocation::RENDER_CENTER);
+    }
+
+    for (auto &p : m_units) {
+      auto tile = p.first;
+      auto tileSprite = tile->getSprite();
+      float x, y;
+      std::tie(x, y) = tile->getPos();
+      x *= tileSprite->m_size;
+      y *= tileSprite->m_size;
+
+      auto unitVec = p.second;
+      int numUnits = unitVec.size();
+      if (numUnits == 0) {
+        continue;
+      }
+      float dx, dy;
+      dx = dy = -(numUnits - 1) / 2 * unitVec[0]->getSprite()->m_tileSize;
+      for (auto &unit : unitVec) {
+        auto unitSprite = unit->getSprite();
+        m_renderer.submitRenderRequest(unitSprite, x + dx, y + dy, 0,
+                                       RenderLocation::RENDER_CENTER);
+        dx += unitSprite->m_tileSize;
+        dy += unitSprite->m_tileSize;
+      }
+    }
+
     m_renderer.render();
+  }
+}
+
+void SGameManager::handleInput() {
+  SDL_Event e;
+  while (SDL_PollEvent(&e) != 0) {
+    //      std::cout << "Got event" << std::endl;
+    if (e.type == SDL_QUIT) {
+      m_bQuit = true;
+    }
+
+    else if (e.type == SDL_KEYDOWN) {
+      auto ks = e.key.keysym.scancode;
+      if (ks == SDL_SCANCODE_W) {
+        m_cameraMovementInput.y -= 1;
+      } else if (ks == SDL_SCANCODE_S) {
+        m_cameraMovementInput.y += 1;
+      } else if (ks == SDL_SCANCODE_A) {
+        m_cameraMovementInput.x -= 1;
+      } else if (ks == SDL_SCANCODE_D) {
+        m_cameraMovementInput.x += 1;
+      }
+    }
+
+    else if (e.type == SDL_MOUSEWHEEL) {
+      m_cameraZoomInput = e.wheel.y;
+    }
+
+    else if (e.type == SDL_MOUSEBUTTONDOWN) {
+      int clickX, clickY;
+      SDL_GetMouseState(&clickX, &clickY);
+      int x, y;
+      x = int(clickX / m_realVirtualRatio);
+      y = int(clickY / m_realVirtualRatio);
+
+      if (e.button.button == SDL_BUTTON_LEFT) {
+        auto clickedTile = getClickedTile(x, y);
+        if (clickedTile == nullptr or m_units[clickedTile].size() == 0) {
+          continue;
+        }
+
+        if (clickedTile == m_selectedTile) {
+          m_selectedTile = nullptr;
+        } else {
+          m_selectedTile = clickedTile;
+        }
+      }
+
+      else if (e.button.button == SDL_BUTTON_RIGHT) {
+        auto clickedTile = getClickedTile(x, y);
+        if (m_selectedTile == nullptr or clickedTile == nullptr or
+            clickedTile == m_selectedTile) {
+          continue;
+        }
+
+        auto unitPath = m_tiles->shortestPath(m_selectedTile, clickedTile);
+
+        // Do right click logic
+      }
+    }
   }
 }
 
@@ -140,17 +213,12 @@ void SGameManager::updateCamera() {
 }
 
 std::shared_ptr<SNode> SGameManager::getClickedTile(int x, int y) {
-  float realVirtualRatio = m_camera->viewportHeight / 1000.0f;
-  x /= realVirtualRatio;
-  y /= realVirtualRatio;
-  auto dr =
-      m_camera->pos -
-      glm::vec2{500 * m_camera->viewportWidth / m_camera->viewportHeight, 500} *
-          m_camera->currentZoom;
+  auto dr = m_camera->pos -
+            glm::vec2{500 * m_aspectRatio, 500} * m_camera->currentZoom;
   dr += glm::vec2{x, y} * m_camera->currentZoom;
   dr += glm::vec2{30, 30};
 
-  return m_tiles->getTileAt(dr.x / 60, dr.y / 60);
+  return m_tiles->getTileAt(std::floor(dr.x / 60), std::floor(dr.y / 60));
 }
 
 void SGameManager::endTurn() {
