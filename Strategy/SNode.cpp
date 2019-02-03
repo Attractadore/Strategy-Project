@@ -66,5 +66,3 @@ void SNode::setSprite(std::shared_ptr<SSprite> newSprite) {
 }
 
 std::shared_ptr<SSprite> SNode::getSprite() { return m_sprite; }
-
-void SNode::refresh() {}

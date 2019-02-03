@@ -54,7 +54,7 @@ SNodeGraph::shortestPath(std::shared_ptr<SNode> src,
                          std::shared_ptr<SNode> dst) {
 
   if (src == dst) {
-    return {dst};
+    return {};
   }
 
   std::unordered_set<std::shared_ptr<SNode>> closedSet;
@@ -111,7 +111,9 @@ SNodeGraph::shortestPath(std::shared_ptr<SNode> src,
     }
   }
 
+  finalPath.pop_back();
   std::reverse(finalPath.begin(), finalPath.end());
+
   return finalPath;
 }
 

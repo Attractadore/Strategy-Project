@@ -16,11 +16,12 @@
 
 RenderRequest::RenderRequest(std::shared_ptr<SSprite> p_sprite, int p_x,
                              int p_y, int p_frameIndex,
-                             RenderLocation p_renderLocation) {
+                             RenderLocation p_renderLocation, bool p_bWorld) {
   m_sprite = p_sprite;
   m_x = p_x;
   m_y = p_y;
   m_frameIndex = p_frameIndex;
+  m_bWorld = p_bWorld;
   m_renderLocation = p_renderLocation;
 }
 
@@ -30,6 +31,7 @@ RenderRequest::RenderRequest(const RenderRequest &other) {
   m_y = other.m_y;
   m_frameIndex = other.m_frameIndex;
   m_renderLocation = other.m_renderLocation;
+  m_bWorld = other.m_bWorld;
 }
 
 RenderRequest::~RenderRequest() {}
@@ -40,6 +42,7 @@ RenderRequest &RenderRequest::operator=(const RenderRequest &other) {
   m_y = other.m_y;
   m_frameIndex = other.m_frameIndex;
   m_renderLocation = other.m_renderLocation;
+  m_bWorld = other.m_bWorld;
   return *this;
 }
 
@@ -64,7 +67,6 @@ SRenderer::SRenderer() {
 
   SDL_DisplayMode dm;
   SDL_GetCurrentDisplayMode(0, &dm);
-  std::cout << "Dm size " << dm.w << " " << dm.h << std::endl;
   m_screenWidth = dm.w * (3.f / 4.f);
   m_screenHeight = dm.h * (3.f / 4.f);
   m_screenRatio = float(m_screenWidth) / m_screenHeight;
@@ -98,6 +100,10 @@ SRenderer::SRenderer() {
 }
 
 SRenderer::~SRenderer() {
+  try {
+    m_renderThread.join();
+  } catch (std::exception &e) {
+  }
 
   for (auto &t : this->textures) {
     SDL_DestroyTexture(t.second);
@@ -111,10 +117,9 @@ SRenderer::~SRenderer() {
 }
 
 void SRenderer::render() {
-  if (!m_bFirstTime) {
+  try {
     m_renderThread.join();
-  } else {
-    m_bFirstTime = false;
+  } catch (std::exception &e) {
   }
   m_tmpQueue = std::move(m_drawQueue);
   m_tmpCameraPos = m_camera->pos;
@@ -153,12 +158,21 @@ void SRenderer::renderThread() {
       rr.m_y -= rr.m_sprite->m_size;
       break;
     }
-    dstRect.w = dstRect.h =
-        int(rr.m_sprite->m_tileSize / m_tmpCameraZoom * m_realVirtualRatio + 2);
-    dstRect.x =
-        int((rr.m_x / m_tmpCameraZoom + drawOffset.x) * m_realVirtualRatio);
-    dstRect.y =
-        int((rr.m_y / m_tmpCameraZoom + drawOffset.y) * m_realVirtualRatio);
+    //    std::cout << std::boolalpha << rr.m_bWorld << std::endl;
+    if (rr.m_bWorld) {
+      dstRect.w = dstRect.h = int(
+          rr.m_sprite->m_tileSize / m_tmpCameraZoom * m_realVirtualRatio + 2);
+      dstRect.x =
+          int((rr.m_x / m_tmpCameraZoom + drawOffset.x) * m_realVirtualRatio);
+      dstRect.y =
+          int((rr.m_y / m_tmpCameraZoom + drawOffset.y) * m_realVirtualRatio);
+    } else {
+      //      std::cout << "Rendering at " << dstRect.x << " " << dstRect.y
+      //                << std::endl;
+      dstRect.w = dstRect.h = rr.m_sprite->m_tileSize * m_realVirtualRatio + 2;
+      dstRect.x = rr.m_x * m_realVirtualRatio;
+      dstRect.y = rr.m_y * m_realVirtualRatio;
+    }
     if (rr.m_sprite->m_numTiles == 1) {
       SDL_RenderCopy(m_renderer, textures[rr.m_sprite->m_texturePath], nullptr,
                      &dstRect);
@@ -196,6 +210,8 @@ void SRenderer::setRenderCamera(std::shared_ptr<SCamera> p_camera) {
 
 void SRenderer::submitRenderRequest(std::shared_ptr<SSprite> p_sprite, int x,
                                     int y, int frameIndex,
-                                    RenderLocation renderLocation) {
-  m_drawQueue.push(RenderRequest{p_sprite, x, y, frameIndex, renderLocation});
+                                    RenderLocation renderLocation,
+                                    bool bWorld) {
+  m_drawQueue.push(
+      RenderRequest{p_sprite, x, y, frameIndex, renderLocation, bWorld});
 }

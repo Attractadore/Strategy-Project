@@ -31,7 +31,8 @@ enum class RenderLocation {
 
 struct RenderRequest {
   RenderRequest(std::shared_ptr<SSprite> p_sprite, int p_x, int p_y,
-                int p_frameIndex, RenderLocation p_renderLocation);
+                int p_frameIndex, RenderLocation p_renderLocation,
+                bool p_bWorld);
   RenderRequest(const RenderRequest &other);
   ~RenderRequest();
 
@@ -41,6 +42,7 @@ struct RenderRequest {
   int m_x;
   int m_y;
   int m_frameIndex;
+  int m_bWorld;
   RenderLocation m_renderLocation;
 };
 
@@ -61,7 +63,8 @@ public:
 
   void setRenderCamera(std::shared_ptr<SCamera> p_camera);
   void submitRenderRequest(std::shared_ptr<SSprite> p_sprite, int x, int y,
-                           int frameIndex, RenderLocation renderLocation);
+                           int frameIndex, RenderLocation renderLocation,
+                           bool bWorld = true);
 
 private:
   void renderThread();

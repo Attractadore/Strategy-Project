@@ -1,5 +1,6 @@
 #include "SGameManager.hpp"
 
+#include "SBuilding.hpp"
 #include "SCamera.hpp"
 #include "SNode.hpp"
 #include "SNodeGraph.hpp"
@@ -10,6 +11,7 @@
 
 #include <SDL2/SDL.h>
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -17,16 +19,20 @@
 #include <cmath>
 
 SGameManager::SGameManager() {
+  defaultPlayer = SPlayer(0);
+  m_players.push_back(&defaultPlayer);
+
   m_worldWidth = 10;
   m_worldHeight = 10;
+  m_tileSize = 64;
   m_tiles =
       std::make_shared<SNodeGraph>(m_worldWidth, m_worldHeight, false, false);
   m_camera = std::make_shared<SCamera>();
 
   m_camera->pos = {0, 0};
   m_camera->zoomRate = 3.0f;
-  m_camera->cameraSpeed = 500.0f;
-  m_camera->defaultZoom = 2.0f;
+  m_camera->cameraSpeed = 1000.0f;
+  m_camera->defaultZoom = 1.0f;
   m_camera->currentZoom = m_camera->defaultZoom;
   m_camera->viewportWidth = 1280;
   m_camera->viewportHeight = 720;
@@ -42,13 +48,30 @@ SGameManager::SGameManager() {
       std::make_shared<SSprite>("./assets/spearman.png", 1, 10, 3);
   m_selectionSprite =
       std::make_shared<SSprite>("./assets/selection.png", 1, 60, 4);
+  m_endTurnButtonSprite =
+      std::make_shared<SSprite>("./assets/ui/endTurn.png", 1, 150, 5);
 
-  SUnit spearman{};
+  SUnit spearman{"UNIT_SPEARMAN"};
+  std::unordered_map<std::string, float> spearmanStats = {
+      {"maxHP", 10},        {"damage", 1},     {"accuracy", 1},
+      {"maxMoves", 2},      {"supplyCost", 1}, {"buildTime", 3},
+      {"resourceCost", 50}, {"size", 4}};
   spearman.setSprite(defaultUnitSprite);
-  spearman.setMaxHP(10);
-  spearman.setDamage(1);
-  spearman.setAccuracy(1);
-  spearman.setMaxMoves(1);
+  spearman.setParams(spearmanStats);
+  m_unitLookUpTable["UNIT_SPEARMAN"] = spearman;
+
+  SBuilding productionBuilding;
+  productionBuilding.setUnitLookUpTable(m_unitLookUpTable);
+  auto productionBuildingSprite =
+      std::make_shared<SSprite>("./assets/building.png", 1, 60, 2);
+  productionBuilding.setSprite(productionBuildingSprite);
+  productionBuilding.setParams(
+      {{"resourceGatherRate", 0}, {"supplyProvided", 30}});
+  SBuilding resourceBuilding;
+  resourceBuilding.setUnitLookUpTable(m_unitLookUpTable);
+  resourceBuilding.setSprite(productionBuildingSprite);
+  resourceBuilding.setParams(
+      {{"resourceGatherRate", 30}, {"supplyProvided", 0}});
 
   m_gen.seed(std::random_device()());
 
@@ -59,9 +82,22 @@ SGameManager::SGameManager() {
     //  for (int i = 0; i < 1; i++) {
     int x = distX(m_gen);
     int y = distY(m_gen);
-    auto targetTile = m_tiles->getTileAt(x, y);
-    m_units[targetTile].push_back(std::make_shared<SUnit>(spearman));
+    auto spawnTile = m_tiles->getTileAt(x, y);
+    auto newUnit = std::make_shared<SUnit>(spearman);
+    newUnit->setOwner(defaultPlayer.getPlayerId());
+    newUnit->setCurrentTile(spawnTile);
+    m_units[spawnTile].insert(newUnit);
+    defaultPlayer.addSupply(newUnit->getSupplyCost());
   }
+
+  auto newBuilding = std::make_shared<SBuilding>(productionBuilding);
+  newBuilding->setOwner(defaultPlayer.getPlayerId());
+  m_buildings[m_tiles->getTileAt(0, 0)] = newBuilding;
+  defaultPlayer.addMaxSupply(productionBuilding.getSupplyProvided());
+  newBuilding = std::make_shared<SBuilding>(resourceBuilding);
+  newBuilding->setOwner(defaultPlayer.getPlayerId());
+  m_buildings[m_tiles->getTileAt(m_worldWidth - 1, m_worldHeight - 1)] =
+      newBuilding;
 
   m_bQuit = false;
 }
@@ -87,55 +123,8 @@ void SGameManager::run() {
     }
 
     handleInput();
-
-    updateCamera();
-
-    for (auto &tile : m_tiles->getTiles()) {
-      auto sprite = tile->getSprite();
-      float x, y;
-      std::tie(x, y) = tile->getPos();
-      x *= sprite->m_size;
-      y *= sprite->m_size;
-      m_renderer.submitRenderRequest(tile->getSprite(), x, y, 0,
-                                     RenderLocation::RENDER_CENTER);
-    }
-
-    if (m_selectedTile != nullptr) {
-      auto tileSprite = m_selectedTile->getSprite();
-      float x, y;
-      std::tie(x, y) = m_selectedTile->getPos();
-      x *= tileSprite->m_size;
-      y *= tileSprite->m_size;
-
-      m_renderer.submitRenderRequest(m_selectionSprite, x, y, 0,
-                                     RenderLocation::RENDER_CENTER);
-    }
-
-    for (auto &p : m_units) {
-      auto tile = p.first;
-      auto tileSprite = tile->getSprite();
-      float x, y;
-      std::tie(x, y) = tile->getPos();
-      x *= tileSprite->m_size;
-      y *= tileSprite->m_size;
-
-      auto unitVec = p.second;
-      int numUnits = unitVec.size();
-      if (numUnits == 0) {
-        continue;
-      }
-      float dx, dy;
-      dx = dy = -(numUnits - 1) / 2 * unitVec[0]->getSprite()->m_tileSize;
-      for (auto &unit : unitVec) {
-        auto unitSprite = unit->getSprite();
-        m_renderer.submitRenderRequest(unitSprite, x + dx, y + dy, 0,
-                                       RenderLocation::RENDER_CENTER);
-        dx += unitSprite->m_tileSize;
-        dy += unitSprite->m_tileSize;
-      }
-    }
-
-    m_renderer.render();
+    handleLogic();
+    handleRendering();
   }
 }
 
@@ -157,6 +146,19 @@ void SGameManager::handleInput() {
         m_cameraMovementInput.x -= 1;
       } else if (ks == SDL_SCANCODE_D) {
         m_cameraMovementInput.x += 1;
+      } else if (ks == SDL_SCANCODE_RETURN) {
+        endTurn();
+      } else if (ks == SDL_SCANCODE_E) {
+        auto buildUnit = m_unitLookUpTable["UNIT_SPEARMAN"];
+        if (defaultPlayer.hasResources(buildUnit.getResourceCost()) and
+            defaultPlayer.hasFreeSupply(buildUnit.getSupplyCost())) {
+
+          std::cout << "Added unit to queue" << std::endl;
+          defaultPlayer.removeResources(buildUnit.getResourceCost());
+          defaultPlayer.addSupply(buildUnit.getSupplyCost());
+          m_buildings[m_tiles->getTileAt(0, 0)]->addUnitToBuildQueue(
+              "UNIT_SPEARMAN");
+        }
       }
     }
 
@@ -172,6 +174,13 @@ void SGameManager::handleInput() {
       y = int(clickY / m_realVirtualRatio);
 
       if (e.button.button == SDL_BUTTON_LEFT) {
+
+        if (glm::length(glm::vec2{1000 * m_aspectRatio - x, 1000 - y}) <=
+            m_endTurnButtonSprite->m_size) {
+          endTurn();
+          continue;
+        }
+
         auto clickedTile = getClickedTile(x, y);
         if (clickedTile == nullptr or m_units[clickedTile].size() == 0) {
           continue;
@@ -191,10 +200,113 @@ void SGameManager::handleInput() {
           continue;
         }
 
-        auto unitPath = m_tiles->shortestPath(m_selectedTile, clickedTile);
+        auto unitRoute = m_tiles->shortestPath(m_selectedTile, clickedTile);
+        auto movingUnits = m_units[m_selectedTile];
 
-        // Do right click logic
+        for (auto &unit : movingUnits) {
+          unit->setTargetTile(unitRoute.back());
+          m_movingUnits.insert(unit);
+        }
+
+        performeUnitMovement(movingUnits);
+
+        m_selectedTile = nullptr;
       }
+    }
+  }
+}
+
+void SGameManager::handleLogic() { updateCamera(); }
+
+void SGameManager::handleRendering() {
+
+  for (auto &tile : m_tiles->getTiles()) {
+    auto sprite = tile->getSprite();
+    float x, y;
+    std::tie(x, y) = tile->getPos();
+    x *= sprite->m_size;
+    y *= sprite->m_size;
+    m_renderer.submitRenderRequest(tile->getSprite(), x, y, 0,
+                                   RenderLocation::RENDER_CENTER);
+    if (m_buildings.count(tile) != 0) {
+      m_renderer.submitRenderRequest(m_buildings[tile]->getSprite(), x, y, 0,
+                                     RenderLocation::RENDER_CENTER);
+    }
+  }
+
+  if (m_selectedTile != nullptr) {
+    auto tileSprite = m_selectedTile->getSprite();
+    float x, y;
+    std::tie(x, y) = m_selectedTile->getPos();
+    x *= tileSprite->m_size;
+    y *= tileSprite->m_size;
+
+    m_renderer.submitRenderRequest(m_selectionSprite, x, y, 0,
+                                   RenderLocation::RENDER_CENTER);
+  }
+
+  for (auto &p : m_units) {
+    auto tile = p.first;
+    auto tileSprite = tile->getSprite();
+    float x, y;
+    std::tie(x, y) = tile->getPos();
+    x *= tileSprite->m_size;
+    y *= tileSprite->m_size;
+
+    auto unitSet = p.second;
+    int numUnits = unitSet.size();
+    if (numUnits == 0) {
+      continue;
+    }
+    float dx, dy;
+    dx = dy = -(numUnits - 1) * 5 / 8;
+    for (auto &unit : unitSet) {
+      auto unitSprite = unit->getSprite();
+      m_renderer.submitRenderRequest(unitSprite, x + dx, y + dy, 0,
+                                     RenderLocation::RENDER_CENTER);
+      dx += unitSprite->m_tileSize / 4;
+      dy += unitSprite->m_tileSize / 4;
+    }
+  }
+
+  m_renderer.submitRenderRequest(m_endTurnButtonSprite, 1000.0f * m_aspectRatio,
+                                 1000, 0, RenderLocation::RENDER_BOTTOM_RIGHT,
+                                 false);
+
+  m_renderer.render();
+}
+
+void SGameManager::performeUnitMovement(
+    std::unordered_set<std::shared_ptr<SUnit>> units) {
+  for (auto &unit : units) {
+    //    std::cout << "Performing unit movement" << std::endl;
+    auto it = std::find(m_movingUnits.begin(), m_movingUnits.end(), unit);
+    if (it == m_movingUnits.end()) {
+      continue;
+    }
+    while (true) {
+
+      if (unit->finishedRoute()) {
+        m_movingUnits.erase(it);
+        break;
+      }
+
+      if (!unit->canAdvanceRoute()) {
+        break;
+      }
+
+      auto route =
+          m_tiles->shortestPath(unit->getCurrentTile(), unit->getTargetTile());
+
+      if (route.size() == 0) {
+        break;
+      }
+
+      auto nextTile = route.front();
+      auto currentTile = unit->getCurrentTile();
+      m_units[currentTile].erase(unit);
+      m_units[nextTile].insert(unit);
+      unit->moveTile(nextTile);
     }
   }
 }
@@ -222,5 +334,28 @@ std::shared_ptr<SNode> SGameManager::getClickedTile(int x, int y) {
 }
 
 void SGameManager::endTurn() {
-  std::cout << "Ending turn (doing nothing)" << std::endl;
+  performeUnitMovement(m_movingUnits);
+  for (auto &p : m_units) {
+    auto unitVec = p.second;
+    for (auto &unit : unitVec) {
+      unit->refresh();
+    }
+  }
+  for (auto &p : m_buildings) {
+    auto building = p.second;
+    m_players[building->getOwner()]->addResources(
+        building->getResourceGatherRate());
+    building->isBuilding();
+    if (building->finisingBuilding()) {
+      auto tile = p.first;
+      auto newUnit = std::make_shared<SUnit>(
+          m_unitLookUpTable[building->unitUnderConstruction()]);
+      newUnit->setCurrentTile(tile);
+      newUnit->setOwner(defaultPlayer.getPlayerId());
+      m_units[tile].insert(newUnit);
+      //      m_players[building->getOwner()]->addSupply(
+      //          m_unitLookUpTable[building->unitUnderConstruction()].getSupplyCost());
+    }
+    building->refresh();
+  }
 }

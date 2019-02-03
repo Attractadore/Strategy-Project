@@ -36,8 +36,6 @@ public:
   void setSprite(std::shared_ptr<SSprite> newSprite);
   std::shared_ptr<SSprite> getSprite();
 
-  void refresh();
-
 protected:
   std::shared_ptr<SSprite> m_sprite;
   int movementCost;
