@@ -15,7 +15,6 @@
 class SNodeGraph;
 struct SCamera;
 class SNode;
-// class SUnit;
 class SBuilding;
 
 class SGameManager {

@@ -1,7 +1,7 @@
+#define SDL_MAIN_HANDLED
 #include "SGameManager.hpp"
 
 #include <SDL2/SDL.h>
-//#include <SDL2/SDL_image.h>
 #include <glm/glm.hpp>
 
 #include <chrono>
@@ -10,7 +10,6 @@
 #include <thread>
 
 int main() {
-  SGameManager gm{};
-  gm.run();
+  SGameManager().run();
   return 0;
 }

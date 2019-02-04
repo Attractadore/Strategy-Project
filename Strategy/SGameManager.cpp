@@ -24,9 +24,7 @@ SGameManager::SGameManager() {
 
   m_worldWidth = 10;
   m_worldHeight = 10;
-  m_tileSize = 64;
-  m_tiles =
-      std::make_shared<SNodeGraph>(m_worldWidth, m_worldHeight, false, false);
+  m_tiles = std::make_shared<SNodeGraph>(m_worldWidth, m_worldHeight);
   m_camera = std::make_shared<SCamera>();
 
   m_camera->pos = {0, 0};
@@ -45,11 +43,11 @@ SGameManager::SGameManager() {
   m_maxFrameTime = 1.0f / m_maxFPS;
 
   std::shared_ptr<SSprite> defaultUnitSprite =
-      std::make_shared<SSprite>("./assets/spearman.png", 1, 10, 3);
+      std::make_shared<SSprite>("./assets/art/spearman.png", 1, 10, 3);
   m_selectionSprite =
-      std::make_shared<SSprite>("./assets/selection.png", 1, 60, 4);
+      std::make_shared<SSprite>("./assets/art/selection.png", 1, 60, 4);
   m_endTurnButtonSprite =
-      std::make_shared<SSprite>("./assets/ui/endTurn.png", 1, 150, 5);
+      std::make_shared<SSprite>("./assets/art/ui/endTurn.png", 1, 150, 5);
 
   SUnit spearman{"UNIT_SPEARMAN"};
   std::unordered_map<std::string, float> spearmanStats = {
@@ -63,15 +61,13 @@ SGameManager::SGameManager() {
   SBuilding productionBuilding;
   productionBuilding.setUnitLookUpTable(m_unitLookUpTable);
   auto productionBuildingSprite =
-      std::make_shared<SSprite>("./assets/building.png", 1, 60, 2);
+      std::make_shared<SSprite>("./assets/art/building.png", 1, 60, 2);
   productionBuilding.setSprite(productionBuildingSprite);
-  productionBuilding.setParams(
-      {{"resourceGatherRate", 0}, {"supplyProvided", 30}});
+  productionBuilding.setParams({{"resourceGatherRate", 0}});
   SBuilding resourceBuilding;
   resourceBuilding.setUnitLookUpTable(m_unitLookUpTable);
   resourceBuilding.setSprite(productionBuildingSprite);
-  resourceBuilding.setParams(
-      {{"resourceGatherRate", 30}, {"supplyProvided", 0}});
+  resourceBuilding.setParams({{"resourceGatherRate", 30}});
 
   m_gen.seed(std::random_device()());
 
@@ -79,7 +75,6 @@ SGameManager::SGameManager() {
   std::uniform_int_distribution<> distY(0, m_worldHeight - 1);
 
   for (int i = 0; i < m_worldWidth * 2; i++) {
-    //  for (int i = 0; i < 1; i++) {
     int x = distX(m_gen);
     int y = distY(m_gen);
     auto spawnTile = m_tiles->getTileAt(x, y);
@@ -87,13 +82,11 @@ SGameManager::SGameManager() {
     newUnit->setOwner(defaultPlayer.getPlayerId());
     newUnit->setCurrentTile(spawnTile);
     m_units[spawnTile].insert(newUnit);
-    defaultPlayer.addSupply(newUnit->getSupplyCost());
   }
 
   auto newBuilding = std::make_shared<SBuilding>(productionBuilding);
   newBuilding->setOwner(defaultPlayer.getPlayerId());
   m_buildings[m_tiles->getTileAt(0, 0)] = newBuilding;
-  defaultPlayer.addMaxSupply(productionBuilding.getSupplyProvided());
   newBuilding = std::make_shared<SBuilding>(resourceBuilding);
   newBuilding->setOwner(defaultPlayer.getPlayerId());
   m_buildings[m_tiles->getTileAt(m_worldWidth - 1, m_worldHeight - 1)] =
@@ -110,8 +103,11 @@ void SGameManager::run() {
   while (!m_bQuit) {
 
     auto newTime = std::chrono::steady_clock::now();
-    m_deltaTime =
+    m_deltaTime = m_deltaTime =
         std::chrono::duration_cast<std::chrono::microseconds>(newTime - time)
+            .count() /
+        1000000.0f;
+    std::chrono::duration_cast<std::chrono::microseconds>(newTime - time)
             .count() /
         1000000.0f;
 
@@ -150,12 +146,10 @@ void SGameManager::handleInput() {
         endTurn();
       } else if (ks == SDL_SCANCODE_E) {
         auto buildUnit = m_unitLookUpTable["UNIT_SPEARMAN"];
-        if (defaultPlayer.hasResources(buildUnit.getResourceCost()) and
-            defaultPlayer.hasFreeSupply(buildUnit.getSupplyCost())) {
+        if (defaultPlayer.hasResources(buildUnit.m_resourceCost)) {
 
           std::cout << "Added unit to queue" << std::endl;
-          defaultPlayer.removeResources(buildUnit.getResourceCost());
-          defaultPlayer.addSupply(buildUnit.getSupplyCost());
+          defaultPlayer.removeResources(buildUnit.m_resourceCost);
           m_buildings[m_tiles->getTileAt(0, 0)]->addUnitToBuildQueue(
               "UNIT_SPEARMAN");
         }
@@ -344,7 +338,7 @@ void SGameManager::endTurn() {
   for (auto &p : m_buildings) {
     auto building = p.second;
     m_players[building->getOwner()]->addResources(
-        building->getResourceGatherRate());
+        building->m_resourceGatherRate);
     building->isBuilding();
     if (building->finisingBuilding()) {
       auto tile = p.first;
@@ -353,8 +347,6 @@ void SGameManager::endTurn() {
       newUnit->setCurrentTile(tile);
       newUnit->setOwner(defaultPlayer.getPlayerId());
       m_units[tile].insert(newUnit);
-      //      m_players[building->getOwner()]->addSupply(
-      //          m_unitLookUpTable[building->unitUnderConstruction()].getSupplyCost());
     }
     building->refresh();
   }

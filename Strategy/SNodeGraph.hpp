@@ -9,7 +9,7 @@ class SNode;
 
 class SNodeGraph {
 public:
-  SNodeGraph(int width, int height, bool bWrapX, bool bWrapY);
+  SNodeGraph(int width, int height);
   ~SNodeGraph();
 
   std::vector<std::shared_ptr<SNode>> shortestPath(std::shared_ptr<SNode> src,
@@ -28,6 +28,4 @@ private:
 
   int m_width;
   int m_height;
-  bool m_bWrapX;
-  bool m_bWrapY;
 };

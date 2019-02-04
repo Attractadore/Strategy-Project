@@ -25,9 +25,6 @@ public:
   setUnitLookUpTable(std::unordered_map<std::string, SUnit> &p_unitLookUpTable);
   void setParams(std::unordered_map<std::string, float> buildingParams);
 
-  int getResourceGatherRate();
-  int getSupplyProvided();
-
   void addUnitToBuildQueue(std::string unitId);
   void removeUnitFromBuildQueue(int index);
   void removeLastUnitFromBuildQueue();
@@ -41,12 +38,11 @@ public:
   void setOwner(int ownerId);
   int getOwner();
 
+  int m_resourceGatherRate;
+
 protected:
   std::shared_ptr<SSprite> m_sprite;
   std::unordered_map<std::string, SUnit> m_unitLookUpTable;
-
-  int m_resourceGatherRate;
-  int m_supplyProvided;
 
 private:
   int m_owningPlayerId;

@@ -84,18 +84,6 @@ SRenderer::SRenderer() {
 
   SDL_SetRenderDrawColor(m_renderer, 0x00, 0x80, 0x80, 0x00);
 
-  std::string nodeTexturePath = "./assets/tile.png";
-  std::string buildingTexturePath = "./assets/building.png";
-  std::string unitTexturePath = "./assets/spearman.png";
-  std::string selectionTexturePath = "./assets/selection.png";
-  std::string endTurnButtonTexturePath = "./assets/ui/endTurn.png";
-
-  this->loadTexture(nodeTexturePath);
-  this->loadTexture(buildingTexturePath);
-  this->loadTexture(unitTexturePath);
-  this->loadTexture(selectionTexturePath);
-  this->loadTexture(endTurnButtonTexturePath);
-
   m_bFirstTime = true;
 }
 
@@ -173,6 +161,11 @@ void SRenderer::renderThread() {
       dstRect.x = rr.m_x * m_realVirtualRatio;
       dstRect.y = rr.m_y * m_realVirtualRatio;
     }
+
+    if (textures.count(rr.m_sprite->m_texturePath) == 0) {
+      loadTexture(rr.m_sprite->m_texturePath);
+    }
+
     if (rr.m_sprite->m_numTiles == 1) {
       SDL_RenderCopy(m_renderer, textures[rr.m_sprite->m_texturePath], nullptr,
                      &dstRect);

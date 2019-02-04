@@ -6,7 +6,6 @@ SBuilding::SBuilding() { m_numTurnsBuilding = 0; }
 
 SBuilding::SBuilding(const SBuilding &other) {
   m_sprite = other.m_sprite;
-  m_supplyProvided = other.m_supplyProvided;
   m_resourceGatherRate = other.m_resourceGatherRate;
 
   m_numTurnsBuilding = 0;
@@ -14,7 +13,6 @@ SBuilding::SBuilding(const SBuilding &other) {
 
 SBuilding::SBuilding(SBuilding &&other) {
   m_sprite = other.m_sprite;
-  m_supplyProvided = other.m_supplyProvided;
   m_resourceGatherRate = other.m_resourceGatherRate;
 
   m_numTurnsBuilding = 0;
@@ -24,7 +22,6 @@ SBuilding::~SBuilding() {}
 
 SBuilding &SBuilding::operator=(const SBuilding &other) {
   m_sprite = other.m_sprite;
-  m_supplyProvided = other.m_supplyProvided;
   m_resourceGatherRate = other.m_resourceGatherRate;
 
   m_numTurnsBuilding = 0;
@@ -34,7 +31,6 @@ SBuilding &SBuilding::operator=(const SBuilding &other) {
 
 SBuilding &SBuilding::operator=(SBuilding &&other) {
   m_sprite = other.m_sprite;
-  m_supplyProvided = other.m_supplyProvided;
   m_resourceGatherRate = other.m_resourceGatherRate;
 
   m_numTurnsBuilding = 0;
@@ -44,11 +40,7 @@ SBuilding &SBuilding::operator=(SBuilding &&other) {
 
 void SBuilding::setParams(
     std::unordered_map<std::string, float> buildingParams) {
-  auto it = buildingParams.find("supplyProvided");
-  if (it != buildingParams.end()) {
-    m_supplyProvided = int(it->second);
-  }
-  it = buildingParams.find("resourceGatherRate");
+  auto it = buildingParams.find("resourceGatherRate");
   if (it != buildingParams.end()) {
     m_resourceGatherRate = int(it->second);
   }
@@ -75,7 +67,7 @@ bool SBuilding::finisingBuilding() {
   }
 
   return m_numTurnsBuilding ==
-         m_unitLookUpTable[m_buildQueue.front()].getBuildTime() - 1;
+         m_unitLookUpTable[m_buildQueue.front()].m_buildTime - 1;
 }
 
 std::string SBuilding::unitUnderConstruction() {
@@ -85,15 +77,7 @@ std::string SBuilding::unitUnderConstruction() {
   return m_buildQueue.front();
 }
 
-bool SBuilding::isBuilding() {
-  std::cout << "Building for " << m_numTurnsBuilding << std::endl;
-  if (!m_buildQueue.empty()) {
-    std::cout << "Unit build time "
-              << m_unitLookUpTable[m_buildQueue.front()].getBuildTime()
-              << std::endl;
-  }
-  return !m_buildQueue.empty();
-}
+bool SBuilding::isBuilding() { return !m_buildQueue.empty(); }
 
 void SBuilding::refresh() {
   if (!isBuilding()) {
@@ -101,15 +85,11 @@ void SBuilding::refresh() {
   }
   m_numTurnsBuilding++;
   if (m_numTurnsBuilding ==
-      m_unitLookUpTable[m_buildQueue.front()].getBuildTime()) {
+      m_unitLookUpTable[m_buildQueue.front()].m_buildTime) {
     m_buildQueue.pop_front();
     m_numTurnsBuilding = 0;
   }
 }
-
-int SBuilding::getResourceGatherRate() { return m_resourceGatherRate; }
-
-int SBuilding::getSupplyProvided() { return m_supplyProvided; }
 
 void SBuilding::addUnitToBuildQueue(std::string unitId) {
   m_buildQueue.push_back(unitId);

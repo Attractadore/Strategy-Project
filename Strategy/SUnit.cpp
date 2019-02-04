@@ -17,10 +17,8 @@ void SUnit::copyStats(const SUnit &other) {
   m_damage = other.m_damage;
   m_accuracy = other.m_accuracy;
   m_maxMoves = other.m_maxMoves;
-  m_supplyCost = other.m_supplyCost;
   m_buildTime = other.m_buildTime;
   m_resourceCost = other.m_resourceCost;
-  m_size = other.m_size;
 
   m_sprite = other.m_sprite;
 
@@ -69,8 +67,6 @@ void SUnit::setOwner(int ownerId) { m_owningPlayerId = ownerId; }
 
 int SUnit::getOwner() { return m_owningPlayerId; }
 
-std::string SUnit::getUnitId() { return m_unitId; }
-
 void SUnit::setParams(std::unordered_map<std::string, float> params) {
   auto it = params.find("maxHP");
   if (it != params.end()) {
@@ -88,10 +84,6 @@ void SUnit::setParams(std::unordered_map<std::string, float> params) {
   if (it != params.end()) {
     m_maxMoves = int(it->second);
   }
-  it = params.find("supplyCost");
-  if (it != params.end()) {
-    m_supplyCost = int(it->second);
-  }
   it = params.find("buildTime");
   if (it != params.end()) {
     m_buildTime = int(it->second);
@@ -99,10 +91,6 @@ void SUnit::setParams(std::unordered_map<std::string, float> params) {
   it = params.find("resourceCost");
   if (it != params.end()) {
     m_resourceCost = int(it->second);
-  }
-  it = params.find("size");
-  if (it != params.end()) {
-    m_size = int(it->second);
   }
 }
 
@@ -133,9 +121,3 @@ bool SUnit::canAdvanceRoute() {
 bool SUnit::finishedRoute() { return m_currentTile == m_targetTile; }
 
 void SUnit::refresh() { m_currentMoves = m_maxMoves; }
-
-int SUnit::getBuildTime() { return m_buildTime; }
-
-int SUnit::getSupplyCost() { return m_supplyCost; }
-
-int SUnit::getResourceCost() { return m_resourceCost; }
