@@ -29,7 +29,7 @@ SGameManager::SGameManager() {
 
   m_camera->pos = {0, 0};
   m_camera->zoomRate = 3.0f;
-  m_camera->cameraSpeed = 1000.0f;
+  m_camera->cameraSpeed = 800.0f;
   m_camera->defaultZoom = 1.0f;
   m_camera->currentZoom = m_camera->defaultZoom;
   m_camera->viewportWidth = 1280;
@@ -93,6 +93,8 @@ SGameManager::SGameManager() {
       newBuilding;
 
   m_bQuit = false;
+
+  //  SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 SGameManager::~SGameManager() {}
@@ -107,10 +109,6 @@ void SGameManager::run() {
         std::chrono::duration_cast<std::chrono::microseconds>(newTime - time)
             .count() /
         1000000.0f;
-    std::chrono::duration_cast<std::chrono::microseconds>(newTime - time)
-            .count() /
-        1000000.0f;
-
     time = newTime;
 
     if (m_maxFPS != 0) {
@@ -126,6 +124,23 @@ void SGameManager::run() {
 
 void SGameManager::handleInput() {
   SDL_Event e;
+  int clickX, clickY;
+  SDL_GetMouseState(&clickX, &clickY);
+  int x, y;
+  x = int(clickX / m_realVirtualRatio);
+  y = int(clickY / m_realVirtualRatio);
+  //  std::cout << "Mouse at " << x << " " << y << std::endl;
+  if (x <= 5) {
+    m_cameraMovementInput.x -= 1;
+  } else if (x >= (1000 * m_aspectRatio - 5)) {
+    m_cameraMovementInput.x += 1;
+  }
+  if (y <= 5) {
+    m_cameraMovementInput.y -= 1;
+  } else if (y >= 995) {
+    m_cameraMovementInput.y += 1;
+  }
+
   while (SDL_PollEvent(&e) != 0) {
     //      std::cout << "Got event" << std::endl;
     if (e.type == SDL_QUIT) {
@@ -134,14 +149,8 @@ void SGameManager::handleInput() {
 
     else if (e.type == SDL_KEYDOWN) {
       auto ks = e.key.keysym.scancode;
-      if (ks == SDL_SCANCODE_W) {
-        m_cameraMovementInput.y -= 1;
-      } else if (ks == SDL_SCANCODE_S) {
-        m_cameraMovementInput.y += 1;
-      } else if (ks == SDL_SCANCODE_A) {
-        m_cameraMovementInput.x -= 1;
-      } else if (ks == SDL_SCANCODE_D) {
-        m_cameraMovementInput.x += 1;
+      if (ks == SDL_SCANCODE_ESCAPE) {
+        m_bQuit = true;
       } else if (ks == SDL_SCANCODE_RETURN) {
         endTurn();
       } else if (ks == SDL_SCANCODE_E) {
@@ -161,11 +170,6 @@ void SGameManager::handleInput() {
     }
 
     else if (e.type == SDL_MOUSEBUTTONDOWN) {
-      int clickX, clickY;
-      SDL_GetMouseState(&clickX, &clickY);
-      int x, y;
-      x = int(clickX / m_realVirtualRatio);
-      y = int(clickY / m_realVirtualRatio);
 
       if (e.button.button == SDL_BUTTON_LEFT) {
 

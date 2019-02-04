@@ -72,9 +72,10 @@ SRenderer::SRenderer() {
   m_screenRatio = float(m_screenWidth) / m_screenHeight;
   m_realVirtualRatio = m_screenHeight / 1000.0f;
 
-  window = SDL_CreateWindow("Strategy", SDL_WINDOWPOS_UNDEFINED,
-                            SDL_WINDOWPOS_UNDEFINED, m_screenWidth,
-                            m_screenHeight, SDL_WINDOW_SHOWN);
+  window =
+      SDL_CreateWindow("Strategy", SDL_WINDOWPOS_UNDEFINED,
+                       SDL_WINDOWPOS_UNDEFINED, m_screenWidth, m_screenHeight,
+                       SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_GRABBED);
   if (window == nullptr) {
     throw std::runtime_error("Failed to create window SDL error " +
                              std::string(SDL_GetError()));
