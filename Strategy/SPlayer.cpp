@@ -15,10 +15,10 @@ SPlayer &SPlayer::operator=(SPlayer &&other) {
 
 int SPlayer::getPlayerId() { return m_playerId; }
 
-void SPlayer::addResources(int amount) { m_playerResources += amount; }
+void SPlayer::addResources(int amount) { m_playerManaAmount += amount; }
 
-bool SPlayer::hasResources(int amount) { return m_playerResources >= amount; }
+bool SPlayer::hasResources(int amount) { return m_playerManaAmount >= amount; }
 
-void SPlayer::removeResources(int amount) { m_playerResources -= amount; }
+void SPlayer::removeResources(int amount) { m_playerManaAmount -= amount; }
 
-void SPlayer::setResources(int amount) { m_playerResources = amount; }
+void SPlayer::setResources(int amount) { m_playerManaAmount = amount; }

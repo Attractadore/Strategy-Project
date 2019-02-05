@@ -20,5 +20,5 @@ public:
 
 private:
   int m_playerId;
-  int m_playerResources = 0;
+  int m_playerManaAmount = 0;
 };
