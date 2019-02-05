@@ -94,6 +94,8 @@ void SUnit::setParams(std::unordered_map<std::string, float> params) {
   }
 }
 
+int SUnit::getCurrentHealth() { return m_currentHP; }
+
 void SUnit::setTargetTile(std::shared_ptr<SNode> newTargetTile) {
   m_targetTile = newTargetTile;
 }

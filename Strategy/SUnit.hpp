@@ -30,6 +30,7 @@ public:
   int getOwner();
 
   void setParams(std::unordered_map<std::string, float> params);
+  int getCurrentHealth();
   void setTargetTile(std::shared_ptr<SNode> newTargetTile);
   void resetTargetTile();
   void setCurrentTile(std::shared_ptr<SNode> newCurrentTile);
