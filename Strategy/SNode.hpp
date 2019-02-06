@@ -29,6 +29,8 @@ public:
   void setPos(const std::pair<int, int> &newPos);
   void setMovementCost(int newMovementCost);
   void addGeyser();
+  void addFoundation();
+  bool bHasFoundation();
   void addMana(int amount);
   int getAndRemoveMana();
 
@@ -53,4 +55,5 @@ private:
   std::vector<std::shared_ptr<SUnit>> m_presentUnits;
   int m_currentMana = 0;
   bool m_bHasGeyser = false;
+  bool m_bHasFoundation = false;
 };

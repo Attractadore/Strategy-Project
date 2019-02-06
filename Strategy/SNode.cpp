@@ -92,3 +92,7 @@ int SNode::getAndRemoveMana() {
 }
 
 int SNode::getCurrentMana() { return m_currentMana; }
+
+void SNode::addFoundation() { m_bHasFoundation = true; }
+
+bool SNode::bHasFoundation() { return m_bHasFoundation; }

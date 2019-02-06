@@ -6,37 +6,43 @@ SBuilding::SBuilding() { m_numTurnsBuilding = 0; }
 
 SBuilding::SBuilding(const SBuilding &other) {
   m_sprite = other.m_sprite;
+  m_uiIconSprite = other.m_uiIconSprite;
   m_resourceGatherRate = other.m_resourceGatherRate;
+  m_resourceCost = other.m_resourceCost;
+  m_unitLookUpTable = other.m_unitLookUpTable;
 
   m_numTurnsBuilding = 0;
 }
 
-SBuilding::SBuilding(SBuilding &&other) {
-  m_sprite = other.m_sprite;
-  m_resourceGatherRate = other.m_resourceGatherRate;
+// SBuilding::SBuilding(SBuilding &&other) {
+//  m_sprite = other.m_sprite;
+//  m_resourceGatherRate = other.m_resourceGatherRate;
 
-  m_numTurnsBuilding = 0;
-}
+//  m_numTurnsBuilding = 0;
+//}
 
-SBuilding::~SBuilding() {}
+// SBuilding::~SBuilding() {}
 
 SBuilding &SBuilding::operator=(const SBuilding &other) {
   m_sprite = other.m_sprite;
+  m_uiIconSprite = other.m_uiIconSprite;
   m_resourceGatherRate = other.m_resourceGatherRate;
+  m_resourceCost = other.m_resourceCost;
+  m_unitLookUpTable = other.m_unitLookUpTable;
 
   m_numTurnsBuilding = 0;
 
   return *this;
 }
 
-SBuilding &SBuilding::operator=(SBuilding &&other) {
-  m_sprite = other.m_sprite;
-  m_resourceGatherRate = other.m_resourceGatherRate;
+// SBuilding &SBuilding::operator=(SBuilding &&other) {
+//  m_sprite = other.m_sprite;
+//  m_resourceGatherRate = other.m_resourceGatherRate;
 
-  m_numTurnsBuilding = 0;
+//  m_numTurnsBuilding = 0;
 
-  return *this;
-}
+//  return *this;
+//}
 
 void SBuilding::setParams(
     std::unordered_map<std::string, float> buildingParams) {
@@ -55,7 +61,13 @@ void SBuilding::setSprite(std::shared_ptr<SSprite> newSprite) {
   m_sprite = newSprite;
 }
 
+void SBuilding::setuiIcon(std::shared_ptr<SSprite> newSprite) {
+  m_uiIconSprite = newSprite;
+}
+
 std::shared_ptr<SSprite> SBuilding::getSprite() { return m_sprite; }
+
+std::shared_ptr<SSprite> SBuilding::getuiIcon() { return m_uiIconSprite; }
 
 void SBuilding::setOwner(int ownerId) { m_owningPlayerId = ownerId; }
 

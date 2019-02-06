@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SBuilding.hpp"
 #include "SPlayer.hpp"
 #include "SRenderer.hpp"
 #include "SUnit.hpp"
@@ -103,6 +104,7 @@ private:
   void endTurn();
 
   std::unordered_map<std::string, SUnit> m_unitLookUpTable;
+  std::unordered_map<std::string, SBuilding> m_buildingLookUpTable;
 
   std::unordered_map<std::shared_ptr<SNode>,
                      std::unordered_set<std::shared_ptr<SUnit>>>
@@ -118,6 +120,9 @@ private:
   std::shared_ptr<SSprite> m_manaIconSprite;
   std::shared_ptr<SSprite> m_manaGeyserSprite;
   std::shared_ptr<SSprite> m_manaBallSprite;
+  std::shared_ptr<SSprite> m_foundationSprite;
+  //  std::shared_ptr<SSprite> m_buildingBarracksIconSprite;
+  //  std::shared_ptr<SSprite> m_buildingShrineIconSprite;
 
   SPlayer defaultPlayer;
   std::vector<SPlayer *> m_players;
@@ -131,6 +136,7 @@ private:
 
   float m_geyserChance = 0.005f;
   float m_manaBallChance = 0.01f;
+  float m_foundationChance = 0.04f;
 
   int m_numManaBallRemaining;
   float m_wsmbRatio = 0.03f;
@@ -138,4 +144,7 @@ private:
   bool bCoinToss(float chance);
 
   void tryAddManaBall(std::shared_ptr<SNode> tile);
+
+  bool bCanConstructBuilding(std::shared_ptr<SNode> tile,
+                             std::string buildingId, SPlayer &player);
 };

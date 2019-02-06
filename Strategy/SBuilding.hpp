@@ -13,14 +13,16 @@ class SBuilding {
 public:
   SBuilding();
   SBuilding(const SBuilding &other);
-  SBuilding(SBuilding &&other);
-  ~SBuilding();
+  //  SBuilding(SBuilding &&other);
+  //  ~SBuilding();
 
   SBuilding &operator=(const SBuilding &other);
-  SBuilding &operator=(SBuilding &&other);
+  //  SBuilding &operator=(SBuilding &&other);
 
   std::shared_ptr<SSprite> getSprite();
+  std::shared_ptr<SSprite> getuiIcon();
   void setSprite(std::shared_ptr<SSprite> newSprite);
+  void setuiIcon(std::shared_ptr<SSprite> newSprite);
   void
   setUnitLookUpTable(std::unordered_map<std::string, SUnit> &p_unitLookUpTable);
   void setParams(std::unordered_map<std::string, float> buildingParams);
@@ -39,9 +41,11 @@ public:
   int getOwner();
 
   int m_resourceGatherRate;
+  int m_resourceCost;
 
 protected:
   std::shared_ptr<SSprite> m_sprite;
+  std::shared_ptr<SSprite> m_uiIconSprite;
   std::unordered_map<std::string, SUnit> m_unitLookUpTable;
 
 private:

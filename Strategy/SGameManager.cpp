@@ -104,6 +104,16 @@ SGameManager::SGameManager() {
       std::make_shared<SSprite>("./assets/art/manaGeyser.png", 1, 50, 2);
   m_manaBallSprite =
       std::make_shared<SSprite>("./assets/art/manaBall.png", 1, 30, 2.5);
+  m_foundationSprite = std::make_shared<SSprite>(
+      "./assets/art/ancientFoundation.png", 1, 60, 1.5);
+  auto buildingBarracksIconSprite =
+      std::make_shared<SSprite>("./assets/art/building.png", 1, 30, 5);
+  auto buildingShrineIconSprite =
+      std::make_shared<SSprite>("./assets/art/shrine.png", 1, 30, 5);
+  auto productionBuildingSprite =
+      std::make_shared<SSprite>("./assets/art/building.png", 1, 60, 2);
+  auto shrineSprite =
+      std::make_shared<SSprite>("./assets/art/shrine.png", 1, 60, 2);
 
   SUnit spearman{"UNIT_SPEARMAN"};
   std::unordered_map<std::string, float> spearmanStats = {
@@ -116,14 +126,18 @@ SGameManager::SGameManager() {
 
   SBuilding productionBuilding;
   productionBuilding.setUnitLookUpTable(m_unitLookUpTable);
-  auto productionBuildingSprite =
-      std::make_shared<SSprite>("./assets/art/building.png", 1, 60, 2);
   productionBuilding.setSprite(productionBuildingSprite);
+  productionBuilding.setuiIcon(buildingBarracksIconSprite);
   productionBuilding.setParams({{"resourceGatherRate", 0}});
+  productionBuilding.m_resourceCost = 800;
   SBuilding resourceBuilding;
   resourceBuilding.setUnitLookUpTable(m_unitLookUpTable);
-  resourceBuilding.setSprite(productionBuildingSprite);
+  resourceBuilding.setSprite(shrineSprite);
+  resourceBuilding.setuiIcon(buildingShrineIconSprite);
   resourceBuilding.setParams({{"resourceGatherRate", 30}});
+  resourceBuilding.m_resourceCost = 600;
+  m_buildingLookUpTable["BUIDLING_BARRACKS"] = productionBuilding;
+  m_buildingLookUpTable["BUILDING_SHRINE"] = resourceBuilding;
 
   m_gen.seed(std::random_device()());
 
@@ -147,6 +161,9 @@ SGameManager::SGameManager() {
       newUnit->setOwner(defaultPlayer.getPlayerId());
       newUnit->setCurrentTile(spawnTile);
       m_units[spawnTile].insert(newUnit);
+    }
+    if (!t->bHasGeyser() and bCoinToss(m_foundationChance)) {
+      t->addFoundation();
     }
   }
 
@@ -289,6 +306,10 @@ void SGameManager::handleRendering() {
       m_renderer.submitRenderRequest(m_manaBallSprite, x, y, 0,
                                      RenderLocation::RENDER_CENTER);
     }
+    if (tile->bHasFoundation()) {
+      m_renderer.submitRenderRequest(m_foundationSprite, x, y, 0,
+                                     RenderLocation::RENDER_CENTER);
+    }
   }
 
   if (m_selectedTile != nullptr) {
@@ -300,6 +321,22 @@ void SGameManager::handleRendering() {
 
     m_renderer.submitRenderRequest(m_selectionSprite, x, y, 0,
                                    RenderLocation::RENDER_CENTER);
+    if (!m_selectedUnits.empty()) {
+      std::list<SBuilding *> constuctableBuildings;
+      for (auto &bId : m_buildingLookUpTable) {
+        if (bCanConstructBuilding(m_selectedTile, bId.first, defaultPlayer)) {
+          constuctableBuildings.push_back(&m_buildingLookUpTable[bId.first]);
+        }
+      }
+      int dx = 5;
+      int dy = 5;
+      for (auto &cb : constuctableBuildings) {
+        m_renderer.submitRenderRequest(
+            cb->getuiIcon(), m_virtualWidth - dx, m_virtualHeight - dy, 0,
+            RenderLocation::RENDER_BOTTOM_RIGHT, false);
+        dx += cb->getuiIcon()->m_size + 5;
+      }
+    }
   }
 
   for (auto &p : m_units) {
@@ -343,9 +380,12 @@ void SGameManager::handleRendering() {
   m_renderer.submitRenderRequest(m_manaIconSprite, m_virtualWidth - 10, 10, 0,
                                  RenderLocation::RENDER_TOP_RIGHT, false);
 
-  m_renderer.submitRenderRequest(m_endTurnButtonSprite, m_virtualWidth,
-                                 m_virtualHeight, 0,
-                                 RenderLocation::RENDER_BOTTOM_RIGHT, false);
+  //  m_renderer.submitRenderRequest(m_endTurnButtonSprite, m_virtualWidth,
+  //                                 m_virtualHeight, 0,
+  //                                 RenderLocation::RENDER_BOTTOM_RIGHT,
+  //                                 false);
+  m_renderer.submitRenderRequest(m_endTurnButtonSprite, 0, 0, 0,
+                                 RenderLocation::RENDER_TOP_LEFT, false);
 
   m_renderer.submitTextRenderRequest(
       std::to_string(defaultPlayer.getCurrentManaAmount()), m_virtualWidth - 35,
@@ -487,8 +527,12 @@ void SGameManager::handleRightClick() {
 void SGameManager::handleLeftClick() {
   int x = m_inputStruct.mouseX;
   int y = m_inputStruct.mouseY;
-  if (glm::length(glm::vec2{m_virtualWidth - x, m_virtualHeight - y}) <=
-      m_endTurnButtonSprite->m_size) {
+  //  if (glm::length(glm::vec2{m_virtualWidth - x, m_virtualHeight - y}) <=
+  //      m_endTurnButtonSprite->m_size) {
+  //    endTurn();
+  //    return;
+  //  }
+  if (glm::length(glm::vec2{x, y}) <= m_endTurnButtonSprite->m_size) {
     endTurn();
     return;
   }
@@ -582,4 +626,11 @@ void SGameManager::tryAddManaBall(std::shared_ptr<SNode> tile) {
     tile->addMana(m_manaBallValue(m_gen));
     m_numManaBallRemaining--;
   }
+}
+
+bool SGameManager::bCanConstructBuilding(std::shared_ptr<SNode> tile,
+                                         std::string buildingId,
+                                         SPlayer &player) {
+  return m_buildings.count(tile) == 0 and
+         player.hasResources(m_buildingLookUpTable[buildingId].m_resourceCost);
 }
