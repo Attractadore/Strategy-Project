@@ -28,6 +28,9 @@ public:
   void setPos(int x, int y);
   void setPos(const std::pair<int, int> &newPos);
   void setMovementCost(int newMovementCost);
+  void addGeyser();
+  void addMana(int amount);
+  int getAndRemoveMana();
 
   void addUnitToTile(std::shared_ptr<SUnit> unit);
 
@@ -35,6 +38,10 @@ public:
 
   void setSprite(std::shared_ptr<SSprite> newSprite);
   std::shared_ptr<SSprite> getSprite();
+
+  int getCurrentMana();
+  bool bHasGeyser();
+  bool bHasMana();
 
 protected:
   std::shared_ptr<SSprite> m_sprite;
@@ -44,4 +51,6 @@ private:
   std::pair<int, int> pos;
   std::shared_ptr<SBuilding> tileBuilding;
   std::vector<std::shared_ptr<SUnit>> m_presentUnits;
+  int m_currentMana = 0;
+  bool m_bHasGeyser = false;
 };

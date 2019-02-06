@@ -22,3 +22,5 @@ bool SPlayer::hasResources(int amount) { return m_playerManaAmount >= amount; }
 void SPlayer::removeResources(int amount) { m_playerManaAmount -= amount; }
 
 void SPlayer::setResources(int amount) { m_playerManaAmount = amount; }
+
+int SPlayer::getCurrentManaAmount() { return m_playerManaAmount; }

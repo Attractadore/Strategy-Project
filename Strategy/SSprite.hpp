@@ -4,7 +4,7 @@
 
 struct SSprite {
   SSprite(std::string p_texturePath, int p_numTiles, int p_size,
-          int p_renderPriority);
+          float p_renderPriority);
   SSprite(const SSprite &other);
   //    SSprite(SSprite&& other);
 
@@ -18,5 +18,5 @@ struct SSprite {
   int m_numTilesAxis;
   int m_size;
   int m_tileSize;
-  int m_renderPriority;
+  float m_renderPriority;
 };

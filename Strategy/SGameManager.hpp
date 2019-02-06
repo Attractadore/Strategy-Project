@@ -98,6 +98,7 @@ private:
 
   std::unordered_set<std::shared_ptr<SUnit>> m_movingUnits;
   void performUnitMovement(std::unordered_set<std::shared_ptr<SUnit>> units);
+  void generateMana();
 
   void endTurn();
 
@@ -114,9 +115,27 @@ private:
   std::shared_ptr<SSprite> m_selectionSprite;
   std::shared_ptr<SSprite> m_endTurnButtonSprite;
   std::shared_ptr<SSprite> m_buttonSelectionSprite;
+  std::shared_ptr<SSprite> m_manaIconSprite;
+  std::shared_ptr<SSprite> m_manaGeyserSprite;
+  std::shared_ptr<SSprite> m_manaBallSprite;
 
   SPlayer defaultPlayer;
   std::vector<SPlayer *> m_players;
 
   SGameInput m_inputStruct;
+
+  std::uniform_int_distribution<> m_manaBallValue{150, 250};
+  std::uniform_int_distribution<> m_manaGeyserValue{50, 75};
+
+  std::uniform_real_distribution<float> m_coinTossDist{0, 1};
+
+  float m_geyserChance = 0.005f;
+  float m_manaBallChance = 0.01f;
+
+  int m_numManaBallRemaining;
+  float m_wsmbRatio = 0.03f;
+
+  bool bCoinToss(float chance);
+
+  void tryAddManaBall(std::shared_ptr<SNode> tile);
 };

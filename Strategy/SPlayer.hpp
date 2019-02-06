@@ -17,6 +17,7 @@ public:
   bool hasResources(int amount);
   void removeResources(int amount);
   void setResources(int amount);
+  int getCurrentManaAmount();
 
 private:
   int m_playerId;

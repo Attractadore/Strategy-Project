@@ -64,13 +64,17 @@ SGameManager::SGameManager() {
   defaultPlayer = SPlayer(0);
   m_players.push_back(&defaultPlayer);
 
-  m_worldWidth = 10;
-  m_worldHeight = 10;
+  m_worldWidth = 32;
+  m_worldHeight = 16;
+  m_numManaBallRemaining = int(m_worldWidth * m_worldHeight * m_wsmbRatio);
+  //  m_worldWidth = 3;
+  //  m_worldHeight = 3;
+
   m_tiles = std::make_shared<SNodeGraph>(m_worldWidth, m_worldHeight);
   m_camera = std::make_shared<SCamera>();
 
   m_camera->pos = {0, 0};
-  m_camera->zoomRate = 3.0f;
+  m_camera->zoomRate = 0.9f;
   m_camera->cameraSpeed = 800.0f;
   m_camera->defaultZoom = 1.0f;
   m_camera->currentZoom = m_camera->defaultZoom;
@@ -94,6 +98,12 @@ SGameManager::SGameManager() {
       std::make_shared<SSprite>("./assets/art/ui/endTurn.png", 1, 150, 5);
   m_buttonSelectionSprite = std::make_shared<SSprite>(
       "./assets/art/ui/buttonSelection.png", 1, 20, 5);
+  m_manaIconSprite =
+      std::make_shared<SSprite>("./assets/art/ui/manaIcon.png", 1, 15, 5);
+  m_manaGeyserSprite =
+      std::make_shared<SSprite>("./assets/art/manaGeyser.png", 1, 50, 2);
+  m_manaBallSprite =
+      std::make_shared<SSprite>("./assets/art/manaBall.png", 1, 30, 2.5);
 
   SUnit spearman{"UNIT_SPEARMAN"};
   std::unordered_map<std::string, float> spearmanStats = {
@@ -117,26 +127,28 @@ SGameManager::SGameManager() {
 
   m_gen.seed(std::random_device()());
 
-  std::uniform_int_distribution<> distX(0, m_worldWidth - 1);
-  std::uniform_int_distribution<> distY(0, m_worldHeight - 1);
+  //  auto newBuilding = std::make_shared<SBuilding>(productionBuilding);
+  //  newBuilding->setOwner(defaultPlayer.getPlayerId());
+  //  m_buildings[m_tiles->getTileAt(0, 0)] = newBuilding;
+  //  newBuilding = std::make_shared<SBuilding>(resourceBuilding);
+  //  newBuilding->setOwner(defaultPlayer.getPlayerId());
+  //  m_buildings[m_tiles->getTileAt(m_worldWidth - 1, m_worldHeight - 1)] =
+  //      newBuilding;
 
-  for (int i = 0; i < m_worldWidth * 2; i++) {
-    int x = distX(m_gen);
-    int y = distY(m_gen);
-    auto spawnTile = m_tiles->getTileAt(x, y);
-    auto newUnit = std::make_shared<SUnit>(spearman);
-    newUnit->setOwner(defaultPlayer.getPlayerId());
-    newUnit->setCurrentTile(spawnTile);
-    m_units[spawnTile].insert(newUnit);
+  for (auto &t : m_tiles->getTiles()) {
+    if (bCoinToss(m_geyserChance) and m_buildings.count(t) == 0) {
+      t->addGeyser();
+      t->addMana(m_manaGeyserValue(m_gen));
+    }
+    tryAddManaBall(t);
+    if (!t->bHasMana() and bCoinToss(2.0f / m_worldHeight)) {
+      auto spawnTile = t;
+      auto newUnit = std::make_shared<SUnit>(spearman);
+      newUnit->setOwner(defaultPlayer.getPlayerId());
+      newUnit->setCurrentTile(spawnTile);
+      m_units[spawnTile].insert(newUnit);
+    }
   }
-
-  auto newBuilding = std::make_shared<SBuilding>(productionBuilding);
-  newBuilding->setOwner(defaultPlayer.getPlayerId());
-  m_buildings[m_tiles->getTileAt(0, 0)] = newBuilding;
-  newBuilding = std::make_shared<SBuilding>(resourceBuilding);
-  newBuilding->setOwner(defaultPlayer.getPlayerId());
-  m_buildings[m_tiles->getTileAt(m_worldWidth - 1, m_worldHeight - 1)] =
-      newBuilding;
 
   m_bQuit = false;
 }
@@ -176,8 +188,8 @@ void SGameManager::handleInput() {
   m_inputStruct.mouseX = x;
   m_inputStruct.mouseY = y;
 
-  std::unordered_set<KeyboardKey> pressedKeys;
-  std::unordered_set<KeyboardKey> releasedKeys;
+  //  std::unordered_set<KeyboardKey> pressedKeys;
+  //  std::unordered_set<KeyboardKey> releasedKeys;
 
   while (SDL_PollEvent(&e) != 0) {
     if (e.type == SDL_QUIT) {
@@ -213,7 +225,7 @@ void SGameManager::handleInput() {
     }
 
     else if (e.type == SDL_MOUSEWHEEL) {
-      m_inputStruct.mouseWheelScroll = e.wheel.y;
+      m_inputStruct.mouseWheelScroll += e.wheel.y;
     }
 
     else if (e.type == SDL_MOUSEBUTTONDOWN) {
@@ -252,15 +264,29 @@ void SGameManager::handleLogic() {
 void SGameManager::handleRendering() {
 
   for (auto &tile : m_tiles->getTiles()) {
+    //    std::cout << "Curent tile mana " << tile->getCurrentMana() <<
+    //    std::endl;
     auto sprite = tile->getSprite();
     float x, y;
     std::tie(x, y) = tile->getPos();
+    //    if (tile->bHasMana()) {
+    //      std::cout << "Tile at " << x << " " << y << " has "
+    //                << tile->getCurrentMana() << std::endl;
+    //    }
     x *= sprite->m_size;
     y *= sprite->m_size;
     m_renderer.submitRenderRequest(tile->getSprite(), x, y, 0,
                                    RenderLocation::RENDER_CENTER);
-    if (m_buildings.count(tile) != 0) {
+    if (m_buildings.count(tile) > 0) {
       m_renderer.submitRenderRequest(m_buildings[tile]->getSprite(), x, y, 0,
+                                     RenderLocation::RENDER_CENTER);
+    }
+    if (tile->bHasGeyser()) {
+      m_renderer.submitRenderRequest(m_manaGeyserSprite, x, y, 0,
+                                     RenderLocation::RENDER_CENTER);
+    }
+    if (tile->bHasMana()) {
+      m_renderer.submitRenderRequest(m_manaBallSprite, x, y, 0,
                                      RenderLocation::RENDER_CENTER);
     }
   }
@@ -314,9 +340,16 @@ void SGameManager::handleRendering() {
     }
   }
 
+  m_renderer.submitRenderRequest(m_manaIconSprite, m_virtualWidth - 10, 10, 0,
+                                 RenderLocation::RENDER_TOP_RIGHT, false);
+
   m_renderer.submitRenderRequest(m_endTurnButtonSprite, m_virtualWidth,
                                  m_virtualHeight, 0,
                                  RenderLocation::RENDER_BOTTOM_RIGHT, false);
+
+  m_renderer.submitTextRenderRequest(
+      std::to_string(defaultPlayer.getCurrentManaAmount()), m_virtualWidth - 35,
+      10, m_manaIconSprite->m_size, 5, RenderLocation::RENDER_TOP_RIGHT);
 
   m_renderer.render();
 }
@@ -349,13 +382,14 @@ void SGameManager::performUnitMovement(
 
       auto nextTile = route.front();
       auto currentTile = unit->getCurrentTile();
-      int x, y;
-      std::tie(x, y) = currentTile->getPos();
-      std::cout << "Currently at " << x << " " << y << std::endl;
-      std::tie(x, y) = nextTile->getPos();
-      std::cout << "Moving to " << x << " " << y << std::endl;
-      std::cout << "Units at next tile: " << m_units[nextTile].size()
-                << std::endl;
+      m_players[unit->getOwner()]->addResources(nextTile->getAndRemoveMana());
+      //      int x, y;
+      //      std::tie(x, y) = currentTile->getPos();
+      //      std::cout << "Currently at " << x << " " << y << std::endl;
+      //      std::tie(x, y) = nextTile->getPos();
+      //      std::cout << "Moving to " << x << " " << y << std::endl;
+      //      std::cout << "Units at next tile: " << m_units[nextTile].size()
+      //                << std::endl;
       m_units[nextTile].insert(unit);
       m_units[currentTile].erase(unit);
       unit->moveTile(nextTile);
@@ -381,12 +415,14 @@ void SGameManager::updateCamera() {
   }
   if (m_inputStruct.mouseWheelScroll != 0) {
     m_camera->currentZoom *= std::pow<float, float>(
-        1 - m_camera->zoomRate * m_deltaTime, m_inputStruct.mouseWheelScroll);
+        m_camera->zoomRate, m_inputStruct.mouseWheelScroll);
+    //    m_camera->currentZoom *= std::pow<float, float>(
+    //        1 - m_camera->zoomRate * m_deltaTime,
+    //        m_inputStruct.mouseWheelScroll);
   }
 }
 
 std::shared_ptr<SNode> SGameManager::getClickedTile(int x, int y) {
-  std::cout << "Clicked at " << x << " " << y << std::endl;
   auto dr = m_camera->pos - glm::vec2{m_virtualWidth, m_virtualHeight} / 2.0f *
                                 m_camera->currentZoom;
   dr += glm::vec2{x, y} * m_camera->currentZoom;
@@ -398,8 +434,13 @@ std::shared_ptr<SNode> SGameManager::getClickedTile(int x, int y) {
 void SGameManager::endTurn() {
   m_selectedTile = nullptr;
   performUnitMovement(m_movingUnits);
+  generateMana();
   for (auto &p : m_units) {
     auto unitVec = p.second;
+    if (!unitVec.empty()) {
+      m_players[(*unitVec.begin())->getOwner()]->addResources(
+          p.first->getAndRemoveMana());
+    }
     for (auto &unit : unitVec) {
       unit->refresh();
     }
@@ -514,4 +555,31 @@ SGameManager::strongestUnit(std::shared_ptr<SNode> tile) {
   }
   return *std::max_element(m_units[tile].begin(), m_units[tile].end(),
                            compareUnits);
+}
+
+bool SGameManager::bCoinToss(float chance) {
+  return m_coinTossDist(m_gen) <= chance;
+}
+
+void SGameManager::generateMana() {
+  for (auto &tile : m_tiles->getTiles()) {
+    if (tile->bHasGeyser() and !tile->bHasMana()) {
+      tile->addMana(m_manaGeyserValue(m_gen));
+    }
+    tryAddManaBall(tile);
+    //    } else if (!tile->bHasGeyser() and !tile->bHasMana() and
+    //               m_units[tile].empty() and m_buildings[tile] == nullptr and
+    //               bCoinToss(m_manaBallChance)) {
+    //      tile->addMana(m_manaBallValue(m_gen));
+    //    }
+  }
+}
+
+void SGameManager::tryAddManaBall(std::shared_ptr<SNode> tile) {
+  if (m_numManaBallRemaining > 0 and !tile->bHasGeyser() and
+      !tile->bHasMana() and m_units[tile].empty() and
+      m_buildings.count(tile) == 0 and bCoinToss(m_manaBallChance)) {
+    tile->addMana(m_manaBallValue(m_gen));
+    m_numManaBallRemaining--;
+  }
 }

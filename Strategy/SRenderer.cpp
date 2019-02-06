@@ -11,6 +11,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 #include <iostream>
 
@@ -46,6 +47,17 @@ RenderRequest &RenderRequest::operator=(const RenderRequest &other) {
   return *this;
 }
 
+TextRenderRequest::TextRenderRequest(std::string p_text, int p_x, int p_y,
+                                     int p_h, int p_renderPriority,
+                                     RenderLocation p_renderLocation) {
+  m_text = p_text;
+  m_x = p_x;
+  m_y = p_y;
+  m_h = p_h;
+  m_renderPriority = p_renderPriority;
+  m_renderLocation = p_renderLocation;
+}
+
 bool operator==(const RenderRequest &lhs, const RenderRequest &rhs) {
   return lhs.m_sprite->m_renderPriority == rhs.m_sprite->m_renderPriority;
 }
@@ -53,6 +65,14 @@ bool operator==(const RenderRequest &lhs, const RenderRequest &rhs) {
 bool operator<(const RenderRequest &lhs, const RenderRequest &rhs) {
   // Sign swap so that lower priority sprites appear first in priority queue
   return lhs.m_sprite->m_renderPriority > rhs.m_sprite->m_renderPriority;
+}
+
+bool operator==(const TextRenderRequest &lhs, const TextRenderRequest &rhs) {
+  return lhs.m_renderPriority == rhs.m_renderPriority;
+}
+
+bool operator<(const TextRenderRequest &lhs, const TextRenderRequest &rhs) {
+  return lhs.m_renderPriority > rhs.m_renderPriority;
 }
 
 SRenderer::SRenderer() {
@@ -63,6 +83,10 @@ SRenderer::SRenderer() {
 
   if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
     throw std::runtime_error("Failed to init SDL_image");
+  }
+
+  if (TTF_Init() < 0) {
+    throw std::runtime_error("Failed to init SDL_ttf");
   }
 
   SDL_DisplayMode dm;
@@ -85,7 +109,13 @@ SRenderer::SRenderer() {
 
   SDL_SetRenderDrawColor(m_renderer, 0x00, 0x80, 0x80, 0x00);
 
-  m_bFirstTime = true;
+  std::string font = "./assets/fonts/OpenSans-Bold.ttf";
+  m_textFont = TTF_OpenFont(font.c_str(), 48);
+  if (m_textFont == nullptr) {
+    throw std::runtime_error("Failed to open font " + font + " SDL_ttf error " +
+                             TTF_GetError());
+  }
+  m_textColor = {0xE0, 0xE0, 0xE0, 0x00};
 }
 
 SRenderer::~SRenderer() {
@@ -98,9 +128,12 @@ SRenderer::~SRenderer() {
     SDL_DestroyTexture(t.second);
   }
 
+  TTF_CloseFont(m_textFont);
+
   SDL_DestroyRenderer(m_renderer);
   SDL_DestroyWindow(this->window);
 
+  TTF_Quit();
   IMG_Quit();
   SDL_Quit();
 }
@@ -111,9 +144,11 @@ void SRenderer::render() {
   } catch (std::exception &e) {
   }
   m_tmpQueue = std::move(m_drawQueue);
+  m_tmpTextDrawQueue = std::move(m_textDrawQueue);
   m_tmpCameraPos = m_camera->pos;
   m_tmpCameraZoom = m_camera->currentZoom;
   m_drawQueue = {};
+  m_textDrawQueue = {};
   m_renderThread = std::thread(&SRenderer::renderThread, this);
 }
 
@@ -178,6 +213,40 @@ void SRenderer::renderThread() {
                      &dstRect);
     }
   }
+
+  while (!m_tmpTextDrawQueue.empty()) {
+    auto trr = m_tmpTextDrawQueue.top();
+    m_tmpTextDrawQueue.pop();
+    if (textures.count(trr.m_text) == 0 or
+        m_textAspectRatios.count(trr.m_text) == 0) {
+      renderText(trr.m_text);
+    }
+    trr.m_w = int(trr.m_h * m_textAspectRatios[trr.m_text]);
+    switch (trr.m_renderLocation) {
+    case RenderLocation::RENDER_CENTER:
+      trr.m_x -= trr.m_w / 2;
+      trr.m_y -= trr.m_h / 2;
+      break;
+    case RenderLocation::RENDER_TOP_LEFT:
+      break;
+    case RenderLocation::RENDER_TOP_RIGHT:
+      trr.m_x -= trr.m_w;
+      break;
+    case RenderLocation::RENDER_BOTTOM_LEFT:
+      trr.m_y -= trr.m_h;
+      break;
+    case RenderLocation::RENDER_BOTTOM_RIGHT:
+      trr.m_x -= trr.m_w;
+      trr.m_y -= trr.m_h;
+      break;
+    }
+    dstRect.w = int(trr.m_w * m_realVirtualRatio);
+    dstRect.h = int(trr.m_h * m_realVirtualRatio);
+    dstRect.x = int(trr.m_x * m_realVirtualRatio);
+    dstRect.y = int(trr.m_y * m_realVirtualRatio);
+    SDL_RenderCopy(m_renderer, textures[trr.m_text], nullptr, &dstRect);
+  }
+
   SDL_RenderPresent(m_renderer);
 }
 
@@ -194,6 +263,34 @@ void SRenderer::loadTexture(std::string path) {
   }
   SDL_FreeSurface(tmpSurf);
   this->textures[path] = tex;
+}
+
+void SRenderer::renderText(std::string text) {
+  if (text == "") {
+    return;
+  }
+  SDL_Surface *tmpSurface =
+      TTF_RenderText_Blended(m_textFont, text.c_str(), m_textColor);
+  if (tmpSurface == nullptr) {
+    throw std::runtime_error(
+        std::string("Failed to render text SDL_ttf error ") + TTF_GetError());
+  }
+  m_textAspectRatios[text] = float(tmpSurface->w) / tmpSurface->h;
+  SDL_Texture *textTexture =
+      SDL_CreateTextureFromSurface(m_renderer, tmpSurface);
+  if (textTexture == nullptr) {
+    throw std::runtime_error("Failed to create texture SDL error " +
+                             std::string(SDL_GetError()));
+  }
+  SDL_FreeSurface(tmpSurface);
+  this->textures[text] = textTexture;
+}
+
+void SRenderer::submitTextRenderRequest(std::string text, int x, int y, int h,
+                                        int renderPriority,
+                                        RenderLocation renderLocation) {
+  m_textDrawQueue.push(
+      TextRenderRequest(text, x, y, h, renderPriority, renderLocation));
 }
 
 void SRenderer::setRenderCamera(std::shared_ptr<SCamera> p_camera) {

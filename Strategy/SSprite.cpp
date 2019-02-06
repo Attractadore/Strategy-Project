@@ -3,7 +3,7 @@
 #include <cmath>
 
 SSprite::SSprite(std::string p_texturePath, int p_numTiles, int p_size,
-                 int p_renderPriority) {
+                 float p_renderPriority) {
   m_texturePath = p_texturePath;
   m_numTiles = p_numTiles;
   m_numTilesAxis = int(std::sqrt(m_numTiles));
