@@ -10,7 +10,12 @@ SBuilding::SBuilding(const SBuilding &other) {
   m_resourceGatherRate = other.m_resourceGatherRate;
   m_resourceCost = other.m_resourceCost;
   m_unitLookUpTable = other.m_unitLookUpTable;
+  m_constructionTime = other.m_constructionTime;
+  m_maxHealth = other.m_maxHealth;
+  m_armour = other.m_armour;
 
+  m_currentHealth = m_maxHealth / float(m_constructionTime);
+  m_currentConstructionTurns = 0;
   m_numTurnsBuilding = 0;
 }
 
@@ -29,8 +34,13 @@ SBuilding &SBuilding::operator=(const SBuilding &other) {
   m_resourceGatherRate = other.m_resourceGatherRate;
   m_resourceCost = other.m_resourceCost;
   m_unitLookUpTable = other.m_unitLookUpTable;
+  m_constructionTime = other.m_constructionTime;
+  m_maxHealth = other.m_maxHealth;
+  m_armour = other.m_armour;
 
+  m_currentHealth = m_maxHealth / float(m_constructionTime);
   m_numTurnsBuilding = 0;
+  m_currentConstructionTurns = 0;
 
   return *this;
 }
@@ -53,7 +63,7 @@ void SBuilding::setParams(
 }
 
 void SBuilding::setUnitLookUpTable(
-    std::unordered_map<std::string, SUnit> &p_unitLookUpTable) {
+    std::unordered_map<std::string, SUnit> *p_unitLookUpTable) {
   m_unitLookUpTable = p_unitLookUpTable;
 }
 
@@ -79,7 +89,7 @@ bool SBuilding::finisingBuilding() {
   }
 
   return m_numTurnsBuilding ==
-         m_unitLookUpTable[m_buildQueue.front()].m_buildTime - 1;
+         (*m_unitLookUpTable)[m_buildQueue.front()].m_buildTime - 1;
 }
 
 std::string SBuilding::unitUnderConstruction() {
@@ -91,13 +101,23 @@ std::string SBuilding::unitUnderConstruction() {
 
 bool SBuilding::isBuilding() { return !m_buildQueue.empty(); }
 
+bool SBuilding::bUnderConstruction() {
+  return m_currentConstructionTurns < m_constructionTime;
+}
+
 void SBuilding::refresh() {
+  std::cout << "Buidling construction time " << m_currentConstructionTurns
+            << std::endl;
+  if (bUnderConstruction()) {
+    m_currentConstructionTurns++;
+    m_currentHealth += m_maxHealth / float(m_constructionTime);
+  }
   if (!isBuilding()) {
     return;
   }
   m_numTurnsBuilding++;
   if (m_numTurnsBuilding ==
-      m_unitLookUpTable[m_buildQueue.front()].m_buildTime) {
+      (*m_unitLookUpTable)[m_buildQueue.front()].m_buildTime) {
     m_buildQueue.pop_front();
     m_numTurnsBuilding = 0;
   }
@@ -106,3 +126,9 @@ void SBuilding::refresh() {
 void SBuilding::addUnitToBuildQueue(std::string unitId) {
   m_buildQueue.push_back(unitId);
 }
+
+void SBuilding::finishConstruction() {
+  m_currentConstructionTurns = m_constructionTime;
+}
+
+void SBuilding::resetConstruction() { m_currentConstructionTurns = 0; }

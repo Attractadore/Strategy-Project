@@ -106,6 +106,12 @@ SGameManager::SGameManager() {
       std::make_shared<SSprite>("./assets/art/manaBall.png", 1, 30, 2.5);
   m_foundationSprite = std::make_shared<SSprite>(
       "./assets/art/ancientFoundation.png", 1, 60, 1.5);
+  m_uiIconBackgroundSprite =
+      std::make_shared<SSprite>("./assets/art/ui/uiBackground.png", 1, 20, 2.9);
+  m_uiIconBackgroundBuildingSprite =
+      std::make_shared<SSprite>("./assets/art/ui/uiBackground.png", 1, 30, 4.9);
+  m_buildingConstructionSprite = std::make_shared<SSprite>(
+      "./assets/art/buildingConstruction.png", 1, 60, 2);
   auto buildingBarracksIconSprite =
       std::make_shared<SSprite>("./assets/art/building.png", 1, 30, 5);
   auto buildingShrineIconSprite =
@@ -125,18 +131,26 @@ SGameManager::SGameManager() {
   m_unitLookUpTable["UNIT_SPEARMAN"] = spearman;
 
   SBuilding productionBuilding;
-  productionBuilding.setUnitLookUpTable(m_unitLookUpTable);
+  productionBuilding.setUnitLookUpTable(&m_unitLookUpTable);
   productionBuilding.setSprite(productionBuildingSprite);
   productionBuilding.setuiIcon(buildingBarracksIconSprite);
-  productionBuilding.setParams({{"resourceGatherRate", 0}});
+  //  productionBuilding.setParams({{"resourceGatherRate", 0}});
+  productionBuilding.m_resourceGatherRate = 0;
+  productionBuilding.m_constructionTime = 10;
+  productionBuilding.m_armour = 0;
+  productionBuilding.m_maxHealth = 400;
   productionBuilding.m_resourceCost = 800;
   SBuilding resourceBuilding;
-  resourceBuilding.setUnitLookUpTable(m_unitLookUpTable);
+  resourceBuilding.setUnitLookUpTable(&m_unitLookUpTable);
   resourceBuilding.setSprite(shrineSprite);
   resourceBuilding.setuiIcon(buildingShrineIconSprite);
-  resourceBuilding.setParams({{"resourceGatherRate", 30}});
+  //  resourceBuilding.setParams({{"resourceGatherRate", 30}});
+  resourceBuilding.m_resourceGatherRate = 30;
+  resourceBuilding.m_constructionTime = 8;
+  resourceBuilding.m_armour = 2;
+  resourceBuilding.m_maxHealth = 200;
   resourceBuilding.m_resourceCost = 600;
-  m_buildingLookUpTable["BUIDLING_BARRACKS"] = productionBuilding;
+  m_buildingLookUpTable["BUILDING_BARRACKS"] = productionBuilding;
   m_buildingLookUpTable["BUILDING_SHRINE"] = resourceBuilding;
 
   m_gen.seed(std::random_device()());
@@ -149,23 +163,31 @@ SGameManager::SGameManager() {
   //  m_buildings[m_tiles->getTileAt(m_worldWidth - 1, m_worldHeight - 1)] =
   //      newBuilding;
 
+  std::unordered_set<std::shared_ptr<SNode>> foundationTiles;
+
   for (auto &t : m_tiles->getTiles()) {
     if (bCoinToss(m_geyserChance) and m_buildings.count(t) == 0) {
       t->addGeyser();
       t->addMana(m_manaGeyserValue(m_gen));
     }
     tryAddManaBall(t);
-    if (!t->bHasMana() and bCoinToss(2.0f / m_worldHeight)) {
-      auto spawnTile = t;
-      auto newUnit = std::make_shared<SUnit>(spearman);
-      newUnit->setOwner(defaultPlayer.getPlayerId());
-      newUnit->setCurrentTile(spawnTile);
-      m_units[spawnTile].insert(newUnit);
-    }
+    //    if (!t->bHasMana() and bCoinToss(2.0f / m_worldHeight)) {
+    //      auto spawnTile = t;
+    //      auto newUnit = std::make_shared<SUnit>(spearman);
+    //      newUnit->setOwner(defaultPlayer.getPlayerId());
+    //      newUnit->setCurrentTile(spawnTile);
+    //      m_units[spawnTile].insert(newUnit);
+    //    }
     if (!t->bHasGeyser() and bCoinToss(m_foundationChance)) {
       t->addFoundation();
+      foundationTiles.insert(t);
     }
   }
+
+  std::uniform_int_distribution<> dist(0, foundationTiles.size() - 1);
+  auto spawnTile = *std::next(foundationTiles.begin(), dist(m_gen));
+  spawnBuidlingForPlayer(spawnTile, "BUILDING_BARRACKS", defaultPlayer);
+  spawnUnitsForPlayer(spawnTile, "UNIT_SPEARMAN", defaultPlayer, 3);
 
   m_bQuit = false;
 }
@@ -295,8 +317,14 @@ void SGameManager::handleRendering() {
     m_renderer.submitRenderRequest(tile->getSprite(), x, y, 0,
                                    RenderLocation::RENDER_CENTER);
     if (m_buildings.count(tile) > 0) {
-      m_renderer.submitRenderRequest(m_buildings[tile]->getSprite(), x, y, 0,
-                                     RenderLocation::RENDER_CENTER);
+      auto tileBuidling = m_buildings[tile];
+      if (tileBuidling->bUnderConstruction()) {
+        m_renderer.submitRenderRequest(m_buildingConstructionSprite, x, y, 0,
+                                       RenderLocation::RENDER_CENTER);
+      } else {
+        m_renderer.submitRenderRequest(tileBuidling->getSprite(), x, y, 0,
+                                       RenderLocation::RENDER_CENTER);
+      }
     }
     if (tile->bHasGeyser()) {
       m_renderer.submitRenderRequest(m_manaGeyserSprite, x, y, 0,
@@ -322,19 +350,27 @@ void SGameManager::handleRendering() {
     m_renderer.submitRenderRequest(m_selectionSprite, x, y, 0,
                                    RenderLocation::RENDER_CENTER);
     if (!m_selectedUnits.empty()) {
-      std::list<SBuilding *> constuctableBuildings;
-      for (auto &bId : m_buildingLookUpTable) {
-        if (bCanConstructBuilding(m_selectedTile, bId.first, defaultPlayer)) {
-          constuctableBuildings.push_back(&m_buildingLookUpTable[bId.first]);
-        }
-      }
+      //      std::list<SBuilding *> constuctableBuildings;
+      //      for (auto &bId : m_buildingLookUpTable) {
+      //        if (bCanConstructBuilding(m_selectedTile, bId.first,
+      //        defaultPlayer)) {
+      //          constuctableBuildings.push_back(&m_buildingLookUpTable[bId.first]);
+      //        }
+      //      }
+      auto constructableBuildings =
+          getConstructableBuidlings(m_selectedTile, defaultPlayer);
       int dx = 5;
       int dy = 5;
-      for (auto &cb : constuctableBuildings) {
+      for (auto &cb : constructableBuildings) {
         m_renderer.submitRenderRequest(
-            cb->getuiIcon(), m_virtualWidth - dx, m_virtualHeight - dy, 0,
-            RenderLocation::RENDER_BOTTOM_RIGHT, false);
-        dx += cb->getuiIcon()->m_size + 5;
+            m_uiIconBackgroundBuildingSprite, m_virtualWidth - dx,
+            m_virtualHeight - dy, 0, RenderLocation::RENDER_BOTTOM_RIGHT,
+            false);
+        m_renderer.submitRenderRequest(
+            m_buildingLookUpTable[cb].getuiIcon(), m_virtualWidth - dx,
+            m_virtualHeight - dy, 0, RenderLocation::RENDER_BOTTOM_RIGHT,
+            false);
+        dx += m_buildingLookUpTable[cb].getuiIcon()->m_size + 5;
       }
     }
   }
@@ -364,6 +400,9 @@ void SGameManager::handleRendering() {
       int dx = 5;
       int dy = -5;
       for (auto &unit : tileUnits) {
+        m_renderer.submitRenderRequest(
+            m_uiIconBackgroundSprite, dx, m_virtualHeight + dy, 0,
+            RenderLocation::RENDER_BOTTOM_LEFT, false);
         m_renderer.submitRenderRequest(
             unit->getSprite(), dx, m_virtualHeight + dy, 0,
             RenderLocation::RENDER_BOTTOM_LEFT, false);
@@ -487,16 +526,20 @@ void SGameManager::endTurn() {
   }
   for (auto &p : m_buildings) {
     auto building = p.second;
-    m_players[building->getOwner()]->addResources(
-        building->m_resourceGatherRate);
-    building->isBuilding();
-    if (building->finisingBuilding()) {
-      auto tile = p.first;
-      auto newUnit = std::make_shared<SUnit>(
-          m_unitLookUpTable[building->unitUnderConstruction()]);
-      newUnit->setCurrentTile(tile);
-      newUnit->setOwner(defaultPlayer.getPlayerId());
-      m_units[tile].insert(newUnit);
+    if (!building->bUnderConstruction()) {
+      std::cout << "adding resources " << building->m_resourceGatherRate
+                << std::endl;
+      m_players[building->getOwner()]->addResources(
+          building->m_resourceGatherRate);
+      building->isBuilding();
+      if (building->finisingBuilding()) {
+        auto tile = p.first;
+        auto newUnit = std::make_shared<SUnit>(
+            m_unitLookUpTable[building->unitUnderConstruction()]);
+        newUnit->setCurrentTile(tile);
+        newUnit->setOwner(defaultPlayer.getPlayerId());
+        m_units[tile].insert(newUnit);
+      }
     }
     building->refresh();
   }
@@ -542,7 +585,7 @@ void SGameManager::handleLeftClick() {
     bool bClickedUnitIcon = (x - 5) % 24 <= 20;
     if (bClickedUnitIcon) {
       int index = (x - 5) / 24;
-      std::cout << "Index = " << index << std::endl;
+      std::cout << "Unit Index = " << index << std::endl;
       auto unitSet = m_units[m_selectedTile];
       if (index < unitSet.size()) {
         std::vector<std::shared_ptr<SUnit>> tileUnits(unitSet.begin(),
@@ -575,6 +618,27 @@ void SGameManager::handleLeftClick() {
         }
         return;
       }
+    }
+  }
+  if (m_selectedTile != nullptr and y <= m_virtualHeight - 5 and
+      y >= m_virtualHeight - 35) {
+    bool bClickedBuildingIcon = (m_virtualWidth - x - 5) % 35 <= 30;
+    if (bClickedBuildingIcon) {
+      int index = (m_virtualWidth - x - 5) / 35;
+      std::cout << "Buidling index " << index << std::endl;
+      auto cb = getConstructableBuidlings(m_selectedTile, defaultPlayer);
+      if (index < cb.size()) {
+        std::cout << cb.front() << std::endl;
+        auto &targetBuilding = *(std::next(cb.begin(), index));
+        //        m_buildings[m_selectedTile] =
+        //            std::make_shared<SBuilding>(targetBuilding);
+        //        defaultPlayer.removeResources(targetBuilding.m_resourceCost);
+        constructBuidlingForPlayer(m_selectedTile, targetBuilding,
+                                   defaultPlayer);
+        m_selectedTile = nullptr;
+        m_selectedUnits = {};
+      }
+      return;
     }
   }
 
@@ -612,8 +676,8 @@ void SGameManager::generateMana() {
     }
     tryAddManaBall(tile);
     //    } else if (!tile->bHasGeyser() and !tile->bHasMana() and
-    //               m_units[tile].empty() and m_buildings[tile] == nullptr and
-    //               bCoinToss(m_manaBallChance)) {
+    //               m_units[tile].empty() and m_buildings[tile] == nullptr
+    //               and bCoinToss(m_manaBallChance)) {
     //      tile->addMana(m_manaBallValue(m_gen));
     //    }
   }
@@ -631,6 +695,61 @@ void SGameManager::tryAddManaBall(std::shared_ptr<SNode> tile) {
 bool SGameManager::bCanConstructBuilding(std::shared_ptr<SNode> tile,
                                          std::string buildingId,
                                          SPlayer &player) {
-  return m_buildings.count(tile) == 0 and
+  return tile->bHasFoundation() and m_buildings.count(tile) == 0 and
          player.hasResources(m_buildingLookUpTable[buildingId].m_resourceCost);
+}
+
+std::list<std::string>
+SGameManager::getConstructableBuidlings(std::shared_ptr<SNode> tile,
+                                        SPlayer &player) {
+  std::list<std::string> cb;
+  for (auto &p : m_buildingLookUpTable) {
+    auto bId = p.first;
+    if (bCanConstructBuilding(tile, bId, player)) {
+      cb.push_back(bId);
+    }
+  }
+  return cb;
+}
+
+std::shared_ptr<SBuilding> SGameManager::constructBuidlingForPlayer(
+    std::shared_ptr<SNode> tile, BUILDING_ID building, SPlayer &player) {
+  if (!bCanConstructBuilding(tile, building, player)) {
+    return nullptr;
+  }
+  auto newBuilding = spawnBuidlingForPlayer(tile, building, player);
+  newBuilding->resetConstruction();
+  player.removeResources(newBuilding->m_resourceCost);
+  return newBuilding;
+}
+
+std::shared_ptr<SBuilding>
+SGameManager::spawnBuidlingForPlayer(std::shared_ptr<SNode> tile,
+                                     BUILDING_ID building, SPlayer &player) {
+  if (m_buildingLookUpTable.count(building) == 0) {
+    return nullptr;
+  }
+  auto newBuilding =
+      std::make_shared<SBuilding>(m_buildingLookUpTable[building]);
+  newBuilding->setOwner(player.getPlayerId());
+  m_buildings[tile] = newBuilding;
+  newBuilding->finishConstruction();
+  return newBuilding;
+}
+
+std::unordered_set<std::shared_ptr<SUnit>>
+SGameManager::spawnUnitsForPlayer(std::shared_ptr<SNode> tile, UNIT_ID unit,
+                                  SPlayer &player, int num) {
+  if (m_unitLookUpTable.count(unit) == 0) {
+    return {};
+  }
+  std::unordered_set<std::shared_ptr<SUnit>> nus;
+  for (int i = 0; i < num; i++) {
+    auto newUnit = std::make_shared<SUnit>(m_unitLookUpTable[unit]);
+    newUnit->setOwner(player.getPlayerId());
+    m_units[tile].insert(newUnit);
+    newUnit->setCurrentTile(tile);
+    nus.insert(newUnit);
+  }
+  return nus;
 }

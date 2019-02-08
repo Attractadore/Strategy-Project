@@ -24,7 +24,7 @@ public:
   void setSprite(std::shared_ptr<SSprite> newSprite);
   void setuiIcon(std::shared_ptr<SSprite> newSprite);
   void
-  setUnitLookUpTable(std::unordered_map<std::string, SUnit> &p_unitLookUpTable);
+  setUnitLookUpTable(std::unordered_map<std::string, SUnit> *p_unitLookUpTable);
   void setParams(std::unordered_map<std::string, float> buildingParams);
 
   void addUnitToBuildQueue(std::string unitId);
@@ -34,22 +34,30 @@ public:
   bool finisingBuilding();
   std::string unitUnderConstruction();
   bool isBuilding();
+  bool bUnderConstruction();
+  void finishConstruction();
+  void resetConstruction();
 
   void refresh();
 
   void setOwner(int ownerId);
   int getOwner();
 
+  int m_armour;
+  int m_maxHealth;
   int m_resourceGatherRate;
   int m_resourceCost;
+  int m_constructionTime;
 
 protected:
   std::shared_ptr<SSprite> m_sprite;
   std::shared_ptr<SSprite> m_uiIconSprite;
-  std::unordered_map<std::string, SUnit> m_unitLookUpTable;
+  std::unordered_map<std::string, SUnit> *m_unitLookUpTable;
 
 private:
+  float m_currentHealth;
   int m_owningPlayerId;
   std::list<std::string> m_buildQueue;
   int m_numTurnsBuilding;
+  int m_currentConstructionTurns;
 };

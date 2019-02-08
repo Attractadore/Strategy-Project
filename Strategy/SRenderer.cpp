@@ -118,6 +118,7 @@ SRenderer::SRenderer() {
   m_textColor = {0xE0, 0xE0, 0xE0, 0x00};
 
   m_renderThread = std::thread(&SRenderer::checkMTSupport, this);
+  m_bUseRenderThread = false;
 }
 
 SRenderer::~SRenderer() {

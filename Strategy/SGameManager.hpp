@@ -14,6 +14,9 @@
 #include <unordered_set>
 #include <vector>
 
+using UNIT_ID = std::string;
+using BUILDING_ID = std::string;
+
 class SNodeGraph;
 struct SCamera;
 class SNode;
@@ -121,6 +124,9 @@ private:
   std::shared_ptr<SSprite> m_manaGeyserSprite;
   std::shared_ptr<SSprite> m_manaBallSprite;
   std::shared_ptr<SSprite> m_foundationSprite;
+  std::shared_ptr<SSprite> m_uiIconBackgroundSprite;
+  std::shared_ptr<SSprite> m_uiIconBackgroundBuildingSprite;
+  std::shared_ptr<SSprite> m_buildingConstructionSprite;
   //  std::shared_ptr<SSprite> m_buildingBarracksIconSprite;
   //  std::shared_ptr<SSprite> m_buildingShrineIconSprite;
 
@@ -147,4 +153,17 @@ private:
 
   bool bCanConstructBuilding(std::shared_ptr<SNode> tile,
                              std::string buildingId, SPlayer &player);
+
+  std::list<std::string> getConstructableBuidlings(std::shared_ptr<SNode> tile,
+                                                   SPlayer &player);
+  std::shared_ptr<SBuilding>
+  constructBuidlingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building,
+                             SPlayer &player);
+  std::shared_ptr<SBuilding> spawnBuidlingForPlayer(std::shared_ptr<SNode> tile,
+                                                    BUILDING_ID building,
+                                                    SPlayer &player);
+
+  std::unordered_set<std::shared_ptr<SUnit>>
+  spawnUnitsForPlayer(std::shared_ptr<SNode> tile, UNIT_ID unit,
+                      SPlayer &player, int num);
 };
