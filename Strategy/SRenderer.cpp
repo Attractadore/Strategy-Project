@@ -116,13 +116,12 @@ SRenderer::SRenderer() {
                              TTF_GetError());
   }
   m_textColor = {0xE0, 0xE0, 0xE0, 0x00};
+
+  m_renderThread = std::thread(&SRenderer::checkMTSupport, this);
 }
 
 SRenderer::~SRenderer() {
-  try {
-    m_renderThread.join();
-  } catch (std::exception &e) {
-  }
+  m_renderThread.join();
 
   for (auto &t : this->textures) {
     SDL_DestroyTexture(t.second);
@@ -139,9 +138,8 @@ SRenderer::~SRenderer() {
 }
 
 void SRenderer::render() {
-  try {
+  if (m_bUseRenderThread) {
     m_renderThread.join();
-  } catch (std::exception &e) {
   }
   m_tmpQueue = std::move(m_drawQueue);
   m_tmpTextDrawQueue = std::move(m_textDrawQueue);
@@ -149,7 +147,11 @@ void SRenderer::render() {
   m_tmpCameraZoom = m_camera->currentZoom;
   m_drawQueue = {};
   m_textDrawQueue = {};
-  m_renderThread = std::thread(&SRenderer::renderThread, this);
+  if (m_bUseRenderThread) {
+    m_renderThread = std::thread(&SRenderer::renderThread, this);
+  } else {
+    renderThread();
+  }
 }
 
 void SRenderer::renderThread() {
@@ -305,4 +307,16 @@ void SRenderer::submitRenderRequest(std::shared_ptr<SSprite> p_sprite, int x,
                                     bool bWorld) {
   m_drawQueue.push(
       RenderRequest{p_sprite, x, y, frameIndex, renderLocation, bWorld});
+}
+
+void SRenderer::checkMTSupport() {
+  SDL_ClearError();
+  SDL_RenderClear(m_renderer);
+  SDL_RenderPresent(m_renderer);
+  if (std::string(SDL_GetError()).size() > 0) {
+    std::cout << "Render in worker thread failed, disabling it" << std::endl;
+    m_bUseRenderThread = false;
+  } else {
+    std::cout << "Render in worker thread successful, keeping it" << std::endl;
+  }
 }

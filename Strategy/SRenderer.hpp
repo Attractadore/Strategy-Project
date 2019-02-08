@@ -113,6 +113,9 @@ private:
   std::priority_queue<RenderRequest> m_tmpQueue;
   std::priority_queue<TextRenderRequest> m_tmpTextDrawQueue;
   std::thread m_renderThread;
+  bool m_bUseRenderThread = true;
+
+  void checkMTSupport();
 
   SDL_Color m_textColor;
   TTF_Font *m_textFont;
