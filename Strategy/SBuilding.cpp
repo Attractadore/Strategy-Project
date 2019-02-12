@@ -124,7 +124,9 @@ void SBuilding::refresh() {
 }
 
 void SBuilding::addUnitToBuildQueue(std::string unitId) {
-  m_buildQueue.push_back(unitId);
+  if (m_buildableUnits.count(unitId)) {
+    m_buildQueue.push_back(unitId);
+  }
 }
 
 void SBuilding::finishConstruction() {
@@ -132,3 +134,7 @@ void SBuilding::finishConstruction() {
 }
 
 void SBuilding::resetConstruction() { m_currentConstructionTurns = 0; }
+
+bool SBuilding::bCanTrainUnit(std::string unit) {
+  return m_buildableUnits.count(unit);
+}

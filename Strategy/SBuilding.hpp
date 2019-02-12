@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 struct SSprite;
 
@@ -43,11 +44,14 @@ public:
   void setOwner(int ownerId);
   int getOwner();
 
+  bool bCanTrainUnit(std::string unit);
+
   int m_armour;
   int m_maxHealth;
   int m_resourceGatherRate;
   int m_resourceCost;
   int m_constructionTime;
+  std::unordered_set<std::string> m_buildableUnits;
 
 protected:
   std::shared_ptr<SSprite> m_sprite;

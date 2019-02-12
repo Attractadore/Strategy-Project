@@ -98,7 +98,8 @@ private:
 
   std::shared_ptr<SNode> m_selectedTile;
   std::unordered_set<std::shared_ptr<SUnit>> m_selectedUnits;
-  std::shared_ptr<SNode> m_targetTile;
+  std::shared_ptr<SBuilding> m_selectedBuilding;
+  //  std::shared_ptr<SNode> m_targetTile;
 
   std::unordered_set<std::shared_ptr<SUnit>> m_movingUnits;
   void performUnitMovement(std::unordered_set<std::shared_ptr<SUnit>> units);
@@ -120,6 +121,7 @@ private:
   std::shared_ptr<SSprite> m_selectionSprite;
   std::shared_ptr<SSprite> m_endTurnButtonSprite;
   std::shared_ptr<SSprite> m_buttonSelectionSprite;
+  std::shared_ptr<SSprite> m_buttonSelectionLargeSprite;
   std::shared_ptr<SSprite> m_manaIconSprite;
   std::shared_ptr<SSprite> m_manaGeyserSprite;
   std::shared_ptr<SSprite> m_manaBallSprite;
@@ -154,8 +156,8 @@ private:
   bool bCanConstructBuilding(std::shared_ptr<SNode> tile,
                              std::string buildingId, SPlayer &player);
 
-  std::list<std::string> getConstructableBuidlings(std::shared_ptr<SNode> tile,
-                                                   SPlayer &player);
+  std::unordered_set<std::string>
+  getConstructableBuidlings(std::shared_ptr<SNode> tile, SPlayer &player);
   std::shared_ptr<SBuilding>
   constructBuidlingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building,
                              SPlayer &player);
@@ -166,4 +168,8 @@ private:
   std::unordered_set<std::shared_ptr<SUnit>>
   spawnUnitsForPlayer(std::shared_ptr<SNode> tile, UNIT_ID unit,
                       SPlayer &player, int num);
+
+  bool bCanTrainUnit(std::shared_ptr<SBuilding> building, std::string unit);
+  std::unordered_set<std::string>
+  getBuildableUnits(std::shared_ptr<SBuilding> building);
 };
