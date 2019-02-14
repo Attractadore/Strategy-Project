@@ -13,6 +13,7 @@ SBuilding::SBuilding(const SBuilding &other) {
   m_constructionTime = other.m_constructionTime;
   m_maxHealth = other.m_maxHealth;
   m_armour = other.m_armour;
+  m_buildableUnits = other.m_buildableUnits;
 
   m_currentHealth = m_maxHealth / float(m_constructionTime);
   m_currentConstructionTurns = 0;
@@ -37,6 +38,7 @@ SBuilding &SBuilding::operator=(const SBuilding &other) {
   m_constructionTime = other.m_constructionTime;
   m_maxHealth = other.m_maxHealth;
   m_armour = other.m_armour;
+  m_buildableUnits = other.m_buildableUnits;
 
   m_currentHealth = m_maxHealth / float(m_constructionTime);
   m_numTurnsBuilding = 0;
@@ -99,6 +101,20 @@ std::string SBuilding::unitUnderConstruction() {
   return m_buildQueue.front();
 }
 
+std::string SBuilding::removeUnitFromBuildQueue(int index) {
+  if (index >= m_buildQueue.size()) {
+    return "";
+  }
+  auto it = std::next(m_buildQueue.begin(), index);
+  std::string unitUnderConstruction = *it;
+  m_buildQueue.erase(it);
+  return unitUnderConstruction;
+}
+
+const std::list<std::string> &SBuilding::getBuildQueue() const {
+  return m_buildQueue;
+}
+
 bool SBuilding::isBuilding() { return !m_buildQueue.empty(); }
 
 bool SBuilding::bUnderConstruction() {
@@ -106,8 +122,6 @@ bool SBuilding::bUnderConstruction() {
 }
 
 void SBuilding::refresh() {
-  std::cout << "Buidling construction time " << m_currentConstructionTurns
-            << std::endl;
   if (bUnderConstruction()) {
     m_currentConstructionTurns++;
     m_currentHealth += m_maxHealth / float(m_constructionTime);
@@ -115,6 +129,8 @@ void SBuilding::refresh() {
   if (!isBuilding()) {
     return;
   }
+  std::cout << "Building " << m_buildQueue.front() << " for "
+            << m_numTurnsBuilding << " turns" << std::endl;
   m_numTurnsBuilding++;
   if (m_numTurnsBuilding ==
       (*m_unitLookUpTable)[m_buildQueue.front()].m_buildTime) {

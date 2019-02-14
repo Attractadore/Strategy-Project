@@ -29,11 +29,12 @@ public:
   void setParams(std::unordered_map<std::string, float> buildingParams);
 
   void addUnitToBuildQueue(std::string unitId);
-  void removeUnitFromBuildQueue(int index);
-  void removeLastUnitFromBuildQueue();
+  std::string removeUnitFromBuildQueue(int index);
+  std::string removeLastUnitFromBuildQueue();
 
   bool finisingBuilding();
   std::string unitUnderConstruction();
+  const std::list<std::string> &getBuildQueue() const;
   bool isBuilding();
   bool bUnderConstruction();
   void finishConstruction();

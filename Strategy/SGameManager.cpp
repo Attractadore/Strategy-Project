@@ -378,6 +378,33 @@ void SGameManager::handleRendering() {
         m_renderer.submitRenderRequest(
             m_buttonSelectionLargeSprite, dx, m_virtualHeight + dy, 0,
             RenderLocation::RENDER_BOTTOM_LEFT, false);
+        auto bu = getBuildableUnits(m_selectedBuilding);
+        dx = 5;
+        dy = 5;
+        for (const auto &u : bu) {
+          m_renderer.submitRenderRequest(
+              m_unitLookUpTable[u].getSprite(), m_virtualWidth - dx,
+              m_virtualHeight - dy, 0, RenderLocation::RENDER_BOTTOM_RIGHT,
+              false);
+          m_renderer.submitRenderRequest(
+              m_uiIconBackgroundSprite, m_virtualWidth - dx,
+              m_virtualHeight - dy, 0, RenderLocation::RENDER_BOTTOM_RIGHT,
+              false);
+          dx += 25;
+        }
+        dx = 5;
+        dy = 30;
+        for (const auto &u : m_buildings[m_selectedTile]->getBuildQueue()) {
+          m_renderer.submitRenderRequest(
+              m_unitLookUpTable[u].getSprite(), m_virtualWidth - dx,
+              m_virtualHeight - dy, 0, RenderLocation::RENDER_BOTTOM_RIGHT,
+              false);
+          m_renderer.submitRenderRequest(
+              m_uiIconBackgroundSprite, m_virtualWidth - dx,
+              m_virtualHeight - dy, 0, RenderLocation::RENDER_BOTTOM_RIGHT,
+              false);
+          dx += 25;
+        }
       }
     }
   }
@@ -543,8 +570,11 @@ void SGameManager::handleLeftClick() {
   }
   if (m_selectedTile != nullptr and y <= m_virtualHeight - 5 and
       y >= m_virtualHeight - 25) {
-    bool bClickedUnitIcon = (x - 5) % 24 <= 20;
+    int range = 5 + (m_units[m_selectedTile].size() - 1) * 24 + 20;
+    //    std::cout << "Range " << range << std::endl;
+    bool bClickedUnitIcon = (x - 5) % 24 <= 20 and x >= 5 and x <= range;
     if (bClickedUnitIcon) {
+      std::cout << "Clicked unit selection card " << std::endl;
       int index = (x - 5) / 24;
       auto unitSet = m_units[m_selectedTile];
       if (index < unitSet.size()) {
@@ -571,10 +601,29 @@ void SGameManager::handleLeftClick() {
       //        m_selectedBuilding = m_buildings[m_selectedTile];
       //      }
     }
+    if (m_selectedBuilding != nullptr) {
+      auto tu = getBuildableUnits(m_selectedBuilding);
+      if (m_selectedBuilding != nullptr and tu.size() > 0) {
+        int range = 5 + (tu.size() - 1) * 25 + 20;
+        bool bClickedTrainingIcon = (m_virtualWidth - x - 5) % 25 <= 20 and
+                                    x <= m_virtualWidth - 5 and
+                                    x >= m_virtualWidth - range;
+        if (bClickedTrainingIcon) {
+          std::cout << "Clicked unit training card " << std::endl;
+          int index = (m_virtualWidth - x - 5) / 25;
+          if (index < tu.size()) {
+            auto &targetUnit = *(std::next(tu.begin(), index));
+            m_selectedBuilding->addUnitToBuildQueue(targetUnit);
+            defaultPlayer.removeResources(
+                m_unitLookUpTable[targetUnit].m_resourceCost);
+            return;
+          }
+        }
+      }
+    }
   }
-  if (m_selectedTile != nullptr and y <= m_virtualHeight - 5 and
+  if (m_selectedUnits.size() > 0 and y <= m_virtualHeight - 5 and
       y >= m_virtualHeight - 35) {
-    std::cout << "Clicked at " << x << " " << y << std::endl;
     auto cb = getConstructableBuidlings(m_selectedTile, defaultPlayer);
     bool bClickedBuildingIcon = (m_virtualWidth - x - 5) % 35 <= 30 and
                                 (m_virtualWidth - x - 5) / 35 < cb.size();
@@ -590,17 +639,27 @@ void SGameManager::handleLeftClick() {
       return;
     }
     int dx = 5 + m_units[m_selectedTile].size() * 24;
-    std::cout << "dx " << dx << std::endl;
     bool bSelectedBuiling =
         (m_buildings.count(m_selectedTile) and x >= dx and x <= dx + 30);
     if (bSelectedBuiling) {
-      std::cout << "Selected Building" << std::endl;
       if (m_selectedBuilding == nullptr) {
         m_selectedUnits.clear();
         m_selectedBuilding = m_buildings[m_selectedTile];
       } else {
         m_selectedBuilding = nullptr;
       }
+      return;
+    }
+  }
+  if (m_selectedBuilding != nullptr and y >= m_virtualHeight - 50 and
+      y <= m_virtualHeight - 30) {
+    auto bq = m_selectedBuilding->getBuildQueue();
+    int index = (m_virtualWidth - x - 5) / 25;
+    bool bClickedUnitInTraining =
+        (m_virtualWidth - x - 5) % 25 <= 20 and index < bq.size();
+    if (bClickedUnitInTraining) {
+      auto tu = m_selectedBuilding->removeUnitFromBuildQueue(index);
+      defaultPlayer.addResources(m_unitLookUpTable[tu].m_resourceCost);
       return;
     }
   }
@@ -614,6 +673,7 @@ void SGameManager::handleLeftClick() {
   }
 
   m_selectedUnits.clear();
+  m_selectedBuilding = nullptr;
   if (clickedTile == m_selectedTile) {
     m_selectedBuilding = nullptr;
   } else {
@@ -722,7 +782,7 @@ SGameManager::spawnUnitsForPlayer(std::shared_ptr<SNode> tile, UNIT_ID unit,
 
 bool SGameManager::bCanTrainUnit(std::shared_ptr<SBuilding> building,
                                  std::string unit) {
-  return building->bCanTrainUnit(unit) and
+  return !building->bUnderConstruction() and building->bCanTrainUnit(unit) and
          m_players[building->getOwner()]->hasResources(
              m_unitLookUpTable[unit].m_resourceCost);
 }
