@@ -15,30 +15,29 @@ public:
   SUnit(const SUnit &other);
   virtual ~SUnit();
 
-  void copyStats(const SUnit &other);
-
   SUnit &operator=(const SUnit &other);
 
   int removeMoves(int numMoves);
-  virtual bool isDead();
-  virtual int applyDamage(int amount);
-  virtual int dealDamage(float chance);
+  //  virtual bool isDead();
+  //  virtual int applyDamage(int amount);
+  //  virtual int dealDamage(float chance);
 
   std::shared_ptr<SSprite> getSprite();
   void setSprite(std::shared_ptr<SSprite> newSprite);
   void setOwner(int ownerId);
   int getOwner();
 
-  void setParams(std::unordered_map<std::string, float> params);
+  //  void setParams(std::unordered_map<std::string, float> params);
   int getCurrentHealth();
-  void setTargetTile(std::shared_ptr<SNode> newTargetTile);
-  void resetTargetTile();
-  void setCurrentTile(std::shared_ptr<SNode> newCurrentTile);
-  std::shared_ptr<SNode> getTargetTile();
-  std::shared_ptr<SNode> getCurrentTile();
-  void moveTile(std::shared_ptr<SNode> tile);
+  //  void setTargetTile(std::shared_ptr<SNode> newTargetTile);
+  //  void resetTargetTile();
+  //  void setCurrentTile(std::shared_ptr<SNode> newCurrentTile);
+  //  std::shared_ptr<SNode> getTargetTile();
+  //  std::shared_ptr<SNode> getCurrentTile();
+  //  void moveTile(std::shared_ptr<SNode> tile);
   bool canAdvanceRoute();
-  bool finishedRoute();
+  bool bCanMove();
+  //  bool finishedRoute();
   void refresh();
 
   std::string m_unitId;
@@ -51,6 +50,8 @@ public:
 
 protected:
   std::shared_ptr<SSprite> m_sprite;
+
+  void copyStats(const SUnit &other);
 
 private:
   int m_currentHP;

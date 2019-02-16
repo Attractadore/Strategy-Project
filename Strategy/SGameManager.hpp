@@ -101,7 +101,7 @@ private:
   std::shared_ptr<SBuilding> m_selectedBuilding;
   //  std::shared_ptr<SNode> m_targetTile;
 
-  std::unordered_set<std::shared_ptr<SUnit>> m_movingUnits;
+  void performUnitMovement();
   void performUnitMovement(std::unordered_set<std::shared_ptr<SUnit>> units);
   void generateMana();
 
@@ -113,6 +113,8 @@ private:
   std::unordered_map<std::shared_ptr<SNode>,
                      std::unordered_set<std::shared_ptr<SUnit>>>
       m_units;
+  std::unordered_map<std::shared_ptr<SUnit>, std::shared_ptr<SNode>>
+      m_unitTargetTiles;
   std::unordered_map<std::shared_ptr<SNode>, std::shared_ptr<SBuilding>>
       m_buildings;
 
@@ -166,10 +168,23 @@ private:
                                                     SPlayer &player);
 
   std::unordered_set<std::shared_ptr<SUnit>>
-  spawnUnitsForPlayer(std::shared_ptr<SNode> tile, UNIT_ID unit,
-                      SPlayer &player, int num);
+  spawnUnitsForPlayer(std::shared_ptr<SNode> tile, UNIT_ID unit, int playerId,
+                      int num);
 
   bool bCanTrainUnit(std::shared_ptr<SBuilding> building, std::string unit);
   std::unordered_set<std::string>
   getBuildableUnits(std::shared_ptr<SBuilding> building);
+
+  std::shared_ptr<SNode> getUnitTile(std::shared_ptr<SUnit> unit);
+  std::shared_ptr<SNode> getUnitTargetTile(std::shared_ptr<SUnit> unit);
+  void setUnitTargetTile(std::shared_ptr<SUnit> unit,
+                         std::shared_ptr<SNode> tile);
+  void resetUnitTargetTile(std::shared_ptr<SUnit> unit);
+  bool bUnitFinishedRoute(std::shared_ptr<SUnit> unit);
+  void moveUnitToTile(std::shared_ptr<SUnit> unit, std::shared_ptr<SNode> tile);
+  void startUnitMovement(std::shared_ptr<SUnit> unit,
+                         std::shared_ptr<SNode> tile);
+  void stopUnitMovement(std::shared_ptr<SUnit> unit);
+
+  void addResourcesForPlayer(int playerId, int amount);
 };
