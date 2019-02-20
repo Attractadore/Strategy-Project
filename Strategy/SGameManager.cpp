@@ -516,7 +516,10 @@ void SGameManager::endTurn()
   }
 
   performUnitMovement(movingUnits);
-  generateMana();
+  if (m_currentPlayerId == m_numPlayers - 1)
+  {
+    generateMana();
+  }
 
   for (const auto& [tile, tileUnits] : m_units)
   {
@@ -526,6 +529,11 @@ void SGameManager::endTurn()
       {
         unit->refresh();
       }
+    }
+    auto su = strongestUnit(tile);
+    if (su != nullptr)
+    {
+      m_players[su->getOwner()]->addResources(tile->getAndRemoveMana());
     }
   }
 
