@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SBuilding.hpp"
+#include "SGameInput.hpp"
 #include "SPlayer.hpp"
 #include "SRenderer.hpp"
 #include "SUnit.hpp"
@@ -22,55 +23,20 @@ struct SCamera;
 class SNode;
 class SBuilding;
 
-enum class MouseButton { BUTTON_NONE, BUTTON_LEFT, BUTTON_RIGHT };
-
-enum class KeyboardKey {
-  KEY_ESCAPE,
-  KEY_ENTER,
-  KEY_RIGHT_SHIFT,
-  KEY_LEFT_SHIFT
-};
-
-struct SGameInput {
-  void reset();
-
-  void activateKeyboardKeys(std::unordered_set<KeyboardKey> keys);
-  void releaseKeyboardKeys(std::unordered_set<KeyboardKey> keys);
-
-  bool bShiftDown();
-
-  void pressKeyboardKey(KeyboardKey key);
-  void releaseKeyboardKey(KeyboardKey key);
-
-  void clickMouseButton(MouseButton button);
-
-  std::unordered_set<MouseButton> mouseClickedButtons = {};
-  std::unordered_set<KeyboardKey> keyboardPressedKeys = {};
-  std::unordered_set<KeyboardKey> keyboardReleasedKeys = {};
-  std::unordered_set<KeyboardKey> keyboardActiveKeys = {};
-
-  bool bRightShiftDown = false;
-  bool bLeftShiftDown = false;
-
-  int mouseWheelScroll = 0;
-
-  int mouseX = -1;
-  int mouseY = -1;
-};
-
-class SGameManager {
-public:
+class SGameManager
+{
+  public:
   SGameManager();
-  SGameManager(const SGameManager &other) = delete;
-  SGameManager(SGameManager &&other) = delete;
+  SGameManager(const SGameManager& other) = delete;
+  SGameManager(SGameManager&& other) = delete;
   ~SGameManager();
 
-  SGameManager &operator=(const SGameManager &other) = delete;
-  SGameManager &operator=(SGameManager &&other) = delete;
+  SGameManager& operator=(const SGameManager& other) = delete;
+  SGameManager& operator=(SGameManager&& other) = delete;
 
   void run();
 
-private:
+  private:
   void handleInput();
   void handleLogic();
   void handleRendering();
@@ -80,6 +46,7 @@ private:
   void handleLeftClick();
   void updateCamera();
   std::shared_ptr<SUnit> strongestUnit(std::shared_ptr<SNode> tile);
+  std::shared_ptr<SUnit> strongestUnitForPlayer(std::shared_ptr<SNode> tile, int playerId);
 
   std::shared_ptr<SNodeGraph> m_tiles;
   int m_worldWidth;
@@ -101,7 +68,6 @@ private:
   std::shared_ptr<SBuilding> m_selectedBuilding;
   //  std::shared_ptr<SNode> m_targetTile;
 
-  void performUnitMovement();
   void performUnitMovement(std::unordered_set<std::shared_ptr<SUnit>> units);
   void generateMana();
 
@@ -112,11 +78,11 @@ private:
 
   std::unordered_map<std::shared_ptr<SNode>,
                      std::unordered_set<std::shared_ptr<SUnit>>>
-      m_units;
+  m_units;
   std::unordered_map<std::shared_ptr<SUnit>, std::shared_ptr<SNode>>
-      m_unitTargetTiles;
+  m_unitTargetTiles;
   std::unordered_map<std::shared_ptr<SNode>, std::shared_ptr<SBuilding>>
-      m_buildings;
+  m_buildings;
 
   std::mt19937 m_gen;
 
@@ -134,15 +100,17 @@ private:
   //  std::shared_ptr<SSprite> m_buildingBarracksIconSprite;
   //  std::shared_ptr<SSprite> m_buildingShrineIconSprite;
 
-  SPlayer defaultPlayer;
-  std::vector<SPlayer *> m_players;
+  //  SPlayer defaultPlayer;
+  int m_numPlayers = 2;
+  std::vector<std::shared_ptr<SPlayer>> m_players;
+  int m_currentPlayerId;
 
   SGameInput m_inputStruct;
 
-  std::uniform_int_distribution<> m_manaBallValue{150, 250};
-  std::uniform_int_distribution<> m_manaGeyserValue{50, 75};
+  std::uniform_int_distribution<> m_manaBallValue{ 150, 250 };
+  std::uniform_int_distribution<> m_manaGeyserValue{ 50, 75 };
 
-  std::uniform_real_distribution<float> m_coinTossDist{0, 1};
+  std::uniform_real_distribution<float> m_coinTossDist{ 0, 1 };
 
   float m_geyserChance = 0.005f;
   float m_manaBallChance = 0.01f;
@@ -155,21 +123,15 @@ private:
 
   void tryAddManaBall(std::shared_ptr<SNode> tile);
 
-  bool bCanConstructBuilding(std::shared_ptr<SNode> tile,
-                             std::string buildingId, SPlayer &player);
+  bool bCanConstructBuilding(std::shared_ptr<SNode> tile, std::string buildingId, int playerId);
 
   std::unordered_set<std::string>
-  getConstructableBuidlings(std::shared_ptr<SNode> tile, SPlayer &player);
+  getConstructableBuidlings(std::shared_ptr<SNode> tile, int playerId);
   std::shared_ptr<SBuilding>
-  constructBuidlingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building,
-                             SPlayer &player);
-  std::shared_ptr<SBuilding> spawnBuidlingForPlayer(std::shared_ptr<SNode> tile,
-                                                    BUILDING_ID building,
-                                                    SPlayer &player);
+  constructBuidlingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building, int playerId);
+  std::shared_ptr<SBuilding> spawnBuidlingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building, int playerId);
 
-  std::unordered_set<std::shared_ptr<SUnit>>
-  spawnUnitsForPlayer(std::shared_ptr<SNode> tile, UNIT_ID unit, int playerId,
-                      int num);
+  std::unordered_set<std::shared_ptr<SUnit>> spawnUnitsForPlayer(std::shared_ptr<SNode> tile, UNIT_ID unit, int playerId, int num);
 
   bool bCanTrainUnit(std::shared_ptr<SBuilding> building, std::string unit);
   std::unordered_set<std::string>
@@ -187,4 +149,7 @@ private:
   void stopUnitMovement(std::shared_ptr<SUnit> unit);
 
   void addResourcesForPlayer(int playerId, int amount);
+
+  int numUnitsForPlayer(std::shared_ptr<SNode> tile, int playerId);
+  bool playerOwnsBuilding(std::shared_ptr<SNode> tile, int playerId);
 };

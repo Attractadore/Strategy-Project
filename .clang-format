@@ -12,7 +12,7 @@ BreakBeforeBinaryOperators: false
 BreakBeforeBraces: Allman
 BreakBeforeTernaryOperators: false
 BreakConstructorInitializersBeforeComma: false
-ColumnLimit: 100
+ColumnLimit: 0
 CommentPragmas: ''
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 0
@@ -21,7 +21,7 @@ Cpp11BracedListStyle: false
 DerivePointerBinding: false
 IndentCaseLabels: false
 IndentFunctionDeclarationAfterType: false
-IndentWidth: 4
+IndentWidth: 2
 Language: Cpp
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
