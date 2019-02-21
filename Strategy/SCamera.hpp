@@ -2,8 +2,9 @@
 
 #include <glm/vec2.hpp>
 
-struct SCamera {
-  glm::vec2 pos{0.0f, 0.0f};
+struct SCamera
+{
+  glm::vec2 pos{ 0.0f, 0.0f };
 
   float defaultZoom = 2.0f;
   float zoomRate = 0.05f;

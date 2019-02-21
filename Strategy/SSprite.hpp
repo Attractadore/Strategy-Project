@@ -2,15 +2,15 @@
 
 #include <string>
 
-struct SSprite {
-  SSprite(std::string p_texturePath, int p_numTiles, int p_size,
-          float p_renderPriority);
-  SSprite(const SSprite &other);
+struct SSprite
+{
+  SSprite(std::string p_texturePath, int p_numTiles, int p_size, float p_renderPriority);
+  SSprite(const SSprite& other);
   //    SSprite(SSprite&& other);
 
   ~SSprite();
 
-  SSprite &operator=(const SSprite &other);
+  SSprite& operator=(const SSprite& other);
   //    SSprite& operator=(SSprite&& other);
 
   std::string m_texturePath;

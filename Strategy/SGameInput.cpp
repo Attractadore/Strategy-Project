@@ -43,4 +43,3 @@ void SGameInput::clickMouseButton(MouseButton button)
 {
   mouseClickedButtons.insert(button);
 }
-

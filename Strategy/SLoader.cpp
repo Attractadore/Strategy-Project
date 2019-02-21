@@ -1,3 +1,5 @@
 #include "SLoader.hpp"
 
-SLoader::SLoader() {}
+SLoader::SLoader()
+{
+}

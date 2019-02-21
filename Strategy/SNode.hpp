@@ -9,16 +9,17 @@ class SUnit;
 class SBuilding;
 struct SSprite;
 
-class SNode {
-public:
+class SNode
+{
+  public:
   SNode();
-  SNode(const SNode &other);
-  SNode(SNode &&other);
+  SNode(const SNode& other);
+  SNode(SNode&& other);
   SNode(int x, int y);
   ~SNode();
 
-  SNode &operator=(const SNode &other);
-  SNode &operator=(SNode &&other);
+  SNode& operator=(const SNode& other);
+  SNode& operator=(SNode&& other);
 
   std::pair<int, int> getPos();
   int getMovementCost();
@@ -26,7 +27,7 @@ public:
   std::vector<std::shared_ptr<SUnit>> getTileUnits();
 
   void setPos(int x, int y);
-  void setPos(const std::pair<int, int> &newPos);
+  void setPos(const std::pair<int, int>& newPos);
   void setMovementCost(int newMovementCost);
   void addGeyser();
   void addFoundation();
@@ -45,11 +46,11 @@ public:
   bool bHasGeyser();
   bool bHasMana();
 
-protected:
+  protected:
   std::shared_ptr<SSprite> m_sprite;
   int movementCost;
 
-private:
+  private:
   std::pair<int, int> pos;
   std::shared_ptr<SBuilding> tileBuilding;
   std::vector<std::shared_ptr<SUnit>> m_presentUnits;

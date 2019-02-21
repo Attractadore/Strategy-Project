@@ -2,16 +2,23 @@
 
 #include <unordered_set>
 
-enum class MouseButton { BUTTON_NONE, BUTTON_LEFT, BUTTON_RIGHT };
+enum class MouseButton
+{
+  BUTTON_NONE,
+  BUTTON_LEFT,
+  BUTTON_RIGHT
+};
 
-enum class KeyboardKey {
+enum class KeyboardKey
+{
   KEY_ESCAPE,
   KEY_ENTER,
   KEY_RIGHT_SHIFT,
   KEY_LEFT_SHIFT
 };
 
-struct SGameInput {
+struct SGameInput
+{
   void reset();
 
   void activateKeyboardKeys(std::unordered_set<KeyboardKey> keys);
@@ -37,4 +44,3 @@ struct SGameInput {
   int mouseX = -1;
   int mouseY = -1;
 };
-

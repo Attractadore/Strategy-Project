@@ -9,7 +9,8 @@
 #include <memory>
 #include <thread>
 
-int main() {
+int main()
+{
   SGameManager().run();
   return 0;
 }

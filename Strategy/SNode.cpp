@@ -5,27 +5,37 @@
 #include <algorithm>
 #include <iostream>
 
-SNode::SNode() {}
+SNode::SNode()
+{
+}
 
-SNode::SNode(const SNode &other) {
+SNode::SNode(const SNode& other)
+{
   m_sprite = other.m_sprite;
   this->movementCost = other.movementCost;
 
   m_currentMana = 0;
 }
 
-SNode::SNode(SNode &&other) {
+SNode::SNode(SNode&& other)
+{
   m_sprite = other.m_sprite;
   this->movementCost = other.movementCost;
 
   m_currentMana = 0;
 }
 
-SNode::SNode(int x, int y) { this->pos = std::make_pair(x, y); }
+SNode::SNode(int x, int y)
+{
+  this->pos = std::make_pair(x, y);
+}
 
-SNode::~SNode() {}
+SNode::~SNode()
+{
+}
 
-SNode &SNode::operator=(const SNode &other) {
+SNode& SNode::operator=(const SNode& other)
+{
   m_sprite = other.m_sprite;
   this->movementCost = other.movementCost;
 
@@ -34,7 +44,8 @@ SNode &SNode::operator=(const SNode &other) {
   return *this;
 }
 
-SNode &SNode::operator=(SNode &&other) {
+SNode& SNode::operator=(SNode&& other)
+{
   m_sprite = other.m_sprite;
   this->movementCost = other.movementCost;
 
@@ -43,56 +54,99 @@ SNode &SNode::operator=(SNode &&other) {
   return *this;
 }
 
-std::pair<int, int> SNode::getPos() { return this->pos; }
+std::pair<int, int> SNode::getPos()
+{
+  return this->pos;
+}
 
-int SNode::getMovementCost() { return this->movementCost; }
+int SNode::getMovementCost()
+{
+  return this->movementCost;
+}
 
-std::shared_ptr<SBuilding> SNode::getTileBuilding() {
+std::shared_ptr<SBuilding> SNode::getTileBuilding()
+{
   return this->tileBuilding;
 }
 
-std::vector<std::shared_ptr<SUnit>> SNode::getTileUnits() {
+std::vector<std::shared_ptr<SUnit>> SNode::getTileUnits()
+{
   return m_presentUnits;
 }
 
-void SNode::setPos(int x, int y) { this->pos = std::make_pair(x, y); }
+void SNode::setPos(int x, int y)
+{
+  this->pos = std::make_pair(x, y);
+}
 
-void SNode::setPos(const std::pair<int, int> &newPos) { this->pos = newPos; }
+void SNode::setPos(const std::pair<int, int>& newPos)
+{
+  this->pos = newPos;
+}
 
-void SNode::setMovementCost(int newMovementCost) {
+void SNode::setMovementCost(int newMovementCost)
+{
   this->movementCost = newMovementCost;
 }
 
-void SNode::setTileBuilding(std::shared_ptr<SBuilding> newBuilding) {
+void SNode::setTileBuilding(std::shared_ptr<SBuilding> newBuilding)
+{
   this->tileBuilding = newBuilding;
 }
 
-void SNode::addUnitToTile(std::shared_ptr<SUnit> unit) {
+void SNode::addUnitToTile(std::shared_ptr<SUnit> unit)
+{
   m_presentUnits.push_back(unit);
 }
 
-void SNode::setSprite(std::shared_ptr<SSprite> newSprite) {
+void SNode::setSprite(std::shared_ptr<SSprite> newSprite)
+{
   m_sprite = newSprite;
 }
 
-std::shared_ptr<SSprite> SNode::getSprite() { return m_sprite; }
+std::shared_ptr<SSprite> SNode::getSprite()
+{
+  return m_sprite;
+}
 
-void SNode::addGeyser() { m_bHasGeyser = true; }
+void SNode::addGeyser()
+{
+  m_bHasGeyser = true;
+}
 
-void SNode::addMana(int amount) { m_currentMana += amount; }
+void SNode::addMana(int amount)
+{
+  m_currentMana += amount;
+}
 
-bool SNode::bHasGeyser() { return m_bHasGeyser; }
+bool SNode::bHasGeyser()
+{
+  return m_bHasGeyser;
+}
 
-bool SNode::bHasMana() { return m_currentMana > 0; }
+bool SNode::bHasMana()
+{
+  return m_currentMana > 0;
+}
 
-int SNode::getAndRemoveMana() {
+int SNode::getAndRemoveMana()
+{
   int tmp = m_currentMana;
   m_currentMana = 0;
   return tmp;
 }
 
-int SNode::getCurrentMana() { return m_currentMana; }
+int SNode::getCurrentMana()
+{
+  return m_currentMana;
+}
 
-void SNode::addFoundation() { m_bHasFoundation = true; }
+void SNode::addFoundation()
+{
+  m_bHasFoundation = true;
+}
 
-bool SNode::bHasFoundation() { return m_bHasFoundation; }
+bool SNode::bHasFoundation()
+{
+  return m_bHasFoundation;
+}

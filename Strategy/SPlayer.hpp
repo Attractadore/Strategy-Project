@@ -1,15 +1,16 @@
 #pragma once
 
-class SPlayer {
-public:
+class SPlayer
+{
+  public:
   SPlayer();
   SPlayer(int p_playerId);
-  SPlayer(const SPlayer &) = delete;
-  SPlayer(SPlayer &&) = delete;
+  SPlayer(const SPlayer&) = delete;
+  SPlayer(SPlayer&&) = delete;
   ~SPlayer();
 
-  SPlayer &operator=(const SPlayer &) = delete;
-  SPlayer &operator=(SPlayer &&other);
+  SPlayer& operator=(const SPlayer&) = delete;
+  SPlayer& operator=(SPlayer&& other);
 
   int getPlayerId();
 
@@ -19,7 +20,7 @@ public:
   void setResources(int amount);
   int getCurrentManaAmount();
 
-private:
+  private:
   int m_playerId;
   int m_playerManaAmount = 0;
 };
