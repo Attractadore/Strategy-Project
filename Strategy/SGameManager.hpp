@@ -103,6 +103,14 @@ class SGameManager
   //  SPlayer defaultPlayer;
   int m_numPlayers = 2;
   std::vector<std::shared_ptr<SPlayer>> m_players;
+  const std::array<SDL_Color, 6> m_playerColors = {
+    SDL_Color{ 0xFF, 0x00, 0x00, 0x00 },
+    SDL_Color{ 0xFF, 0x00, 0xFF, 0x00 },
+    SDL_Color{ 0xFF, 0xFF, 0x00, 0x00 },
+    SDL_Color{ 0x00, 0x00, 0xFF, 0x00 },
+    SDL_Color{ 0x00, 0xFF, 0x00, 0x00 },
+    SDL_Color{ 0x00, 0xFF, 0xFF, 0x00 }
+  };
   int m_currentPlayerId;
 
   SGameInput m_inputStruct;

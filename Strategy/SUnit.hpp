@@ -8,36 +8,27 @@
 class SNode;
 struct SSprite;
 
-class SUnit {
-public:
+class SUnit
+{
+  public:
   SUnit();
   SUnit(std::string p_unitId);
-  SUnit(const SUnit &other);
+  SUnit(const SUnit& other);
   virtual ~SUnit();
 
-  SUnit &operator=(const SUnit &other);
+  SUnit& operator=(const SUnit& other);
 
   int removeMoves(int numMoves);
-  //  virtual bool isDead();
-  //  virtual int applyDamage(int amount);
-  //  virtual int dealDamage(float chance);
 
   std::shared_ptr<SSprite> getSprite();
+  std::shared_ptr<SSprite> getTeamColorSprite();
   void setSprite(std::shared_ptr<SSprite> newSprite);
+  void setTeamColorSprite(std::shared_ptr<SSprite> newTeamColorSprite);
   void setOwner(int ownerId);
   int getOwner();
 
-  //  void setParams(std::unordered_map<std::string, float> params);
   int getCurrentHealth();
-  //  void setTargetTile(std::shared_ptr<SNode> newTargetTile);
-  //  void resetTargetTile();
-  //  void setCurrentTile(std::shared_ptr<SNode> newCurrentTile);
-  //  std::shared_ptr<SNode> getTargetTile();
-  //  std::shared_ptr<SNode> getCurrentTile();
-  //  void moveTile(std::shared_ptr<SNode> tile);
-  bool canAdvanceRoute();
   bool bCanMove();
-  //  bool finishedRoute();
   void refresh();
 
   std::string m_unitId;
@@ -48,16 +39,14 @@ public:
   int m_buildTime;
   int m_resourceCost;
 
-protected:
+  protected:
   std::shared_ptr<SSprite> m_sprite;
+  std::shared_ptr<SSprite> m_teamColorSprite;
 
-  void copyStats(const SUnit &other);
+  void copyStats(const SUnit& other);
 
-private:
+  private:
   int m_currentHP;
   int m_currentMoves;
   int m_owningPlayerId;
-
-  std::shared_ptr<SNode> m_currentTile;
-  std::shared_ptr<SNode> m_targetTile;
 };
