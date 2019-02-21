@@ -75,7 +75,8 @@ SGameManager::SGameManager()
   spearman.m_accuracy = 1;
   spearman.m_maxMoves = 2;
   spearman.m_buildTime = 4;
-  spearman.m_resourceCost = 600;
+//  spearman.m_resourceCost = 600;
+  spearman.m_resourceCost = 50;
 
   m_unitLookUpTable["UNIT_SPEARMAN"] = spearman;
 
@@ -539,15 +540,16 @@ void SGameManager::endTurn()
 
   for (const auto& [tile, building] : m_buildings)
   {
-    if (!building->bUnderConstruction() and building->getOwner() == m_currentPlayerId)
+    if (building->getOwner() != m_currentPlayerId){
+        continue;
+    }
+    if (!building->bUnderConstruction())
     {
-      int buildingOwnerId = building->getOwner();
-
-      addResourcesForPlayer(buildingOwnerId, building->m_resourceGatherRate);
+      addResourcesForPlayer(m_currentPlayerId, building->m_resourceGatherRate);
 
       if (building->finisingBuilding())
       {
-        spawnUnitsForPlayer(tile, building->unitUnderConstruction(), buildingOwnerId, 1);
+        spawnUnitsForPlayer(tile, building->unitUnderConstruction(), m_currentPlayerId, 1);
       }
     }
 
