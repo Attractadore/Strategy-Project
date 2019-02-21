@@ -35,7 +35,7 @@ enum class RenderLocation {
 struct RenderRequest {
   RenderRequest(std::shared_ptr<SSprite> p_sprite, int p_x, int p_y,
                 int p_frameIndex, RenderLocation p_renderLocation,
-                bool p_bWorld);
+                bool p_bWorld, SDL_Color p_modulationColor = {0xFF, 0xFF, 0xFF, 0x00});
   RenderRequest(const RenderRequest &other);
   ~RenderRequest();
 
@@ -47,6 +47,7 @@ struct RenderRequest {
   int m_frameIndex;
   int m_bWorld;
   RenderLocation m_renderLocation;
+  SDL_Color m_modulationColor = {0xFF, 0xFF, 0xFF, 0x00};
 };
 
 struct TextRenderRequest {
@@ -82,7 +83,7 @@ public:
   void setRenderCamera(std::shared_ptr<SCamera> p_camera);
   void submitRenderRequest(std::shared_ptr<SSprite> p_sprite, int x, int y,
                            int frameIndex, RenderLocation renderLocation,
-                           bool bWorld = true);
+                           bool bWorld = true, SDL_Color modulationColor = {0xFF, 0xFF, 0xFF, 0x00});
   void submitTextRenderRequest(std::string text, int x, int y, int h,
                                int renderPriority,
                                RenderLocation renderLocation);
