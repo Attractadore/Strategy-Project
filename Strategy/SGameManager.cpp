@@ -52,6 +52,7 @@ SGameManager::SGameManager()
   m_maxFrameTime = 1.0f / m_maxFPS;
 
   auto defaultUnitSprite = std::make_shared<SSprite>("./assets/art/spearman.png", 1, 20, 3);
+  auto spearmanTCSprite = std::make_shared<SSprite>("./assets/art/spearmanTC.png", 1, 20, 3.1);
   m_selectionSprite = std::make_shared<SSprite>("./assets/art/selection.png", 1, 60, 4);
   m_endTurnButtonSprite = std::make_shared<SSprite>("./assets/art/ui/endTurn.png", 1, 150, 5);
   m_buttonSelectionSprite = std::make_shared<SSprite>("./assets/art/ui/buttonSelection.png", 1, 20, 5);
@@ -63,19 +64,23 @@ SGameManager::SGameManager()
   m_uiIconBackgroundSprite = std::make_shared<SSprite>("./assets/art/ui/uiBackground.png", 1, 20, 2.9);
   m_uiIconBackgroundBuildingSprite = std::make_shared<SSprite>("./assets/art/ui/uiBackground.png", 1, 30, 4.9);
   m_buildingConstructionSprite = std::make_shared<SSprite>("./assets/art/buildingConstruction.png", 1, 60, 2);
+  m_buildingConstructionTCSprite = std::make_shared<SSprite>("./assets/art/buildingConstructionTC.png", 1, 60, 2.1);
   auto buildingBarracksIconSprite = std::make_shared<SSprite>("./assets/art/building.png", 1, 30, 5);
   auto buildingShrineIconSprite = std::make_shared<SSprite>("./assets/art/shrine.png", 1, 30, 5);
   auto productionBuildingSprite = std::make_shared<SSprite>("./assets/art/building.png", 1, 60, 2);
   auto shrineSprite = std::make_shared<SSprite>("./assets/art/shrine.png", 1, 60, 2);
+  auto productionBuildingTCSprite = std::make_shared<SSprite>("./assets/art/buildingTC.png", 1, 60, 2.1);
+  auto shrineTCSprite = std::make_shared<SSprite>("./assets/art/shrineTC.png", 1, 60, 2.1);
 
   SUnit spearman{ "UNIT_SPEARMAN" };
   spearman.setSprite(defaultUnitSprite);
+  spearman.setTeamColorSprite(spearmanTCSprite);
   spearman.m_maxHP = 75;
   spearman.m_damage = 10;
   spearman.m_accuracy = 1;
   spearman.m_maxMoves = 2;
   spearman.m_buildTime = 4;
-//  spearman.m_resourceCost = 600;
+  //  spearman.m_resourceCost = 600;
   spearman.m_resourceCost = 50;
 
   m_unitLookUpTable["UNIT_SPEARMAN"] = spearman;
@@ -84,6 +89,7 @@ SGameManager::SGameManager()
   productionBuilding.setUnitLookUpTable(&m_unitLookUpTable);
   productionBuilding.setSprite(productionBuildingSprite);
   productionBuilding.setuiIcon(buildingBarracksIconSprite);
+  productionBuilding.setTeamColorSprite(productionBuildingTCSprite);
   productionBuilding.m_resourceGatherRate = 0;
   productionBuilding.m_constructionTime = 10;
   productionBuilding.m_armour = 0;
@@ -95,6 +101,7 @@ SGameManager::SGameManager()
   resourceBuilding.setUnitLookUpTable(&m_unitLookUpTable);
   resourceBuilding.setSprite(shrineSprite);
   resourceBuilding.setuiIcon(buildingShrineIconSprite);
+  resourceBuilding.setTeamColorSprite(shrineTCSprite);
   resourceBuilding.m_resourceGatherRate = 30;
   resourceBuilding.m_constructionTime = 8;
   resourceBuilding.m_armour = 2;
@@ -142,6 +149,21 @@ SGameManager::SGameManager()
   m_currentPlayerId = 0;
 
   m_bQuit = false;
+
+  //  SDL_Color c;
+  //  c.r = 0;
+  //  c.g = 255;
+  //  c.b = 0;
+  //  c.a = 0;
+
+  //  m_playerColors.push_back(c);
+
+  //  c.r = 255;
+  //  c.g = 0;
+
+  //  m_playerColors.push_back(c);
+  //  m_playerColors = { { 255, 0, 0, 0 },
+  //                     { 0, 255, 0, 0 } };
 }
 
 SGameManager::~SGameManager()
@@ -307,10 +329,12 @@ void SGameManager::handleRendering()
       if (tileBuidling->bUnderConstruction())
       {
         m_renderer.submitRenderRequest(m_buildingConstructionSprite, x, y, 0, RenderLocation::RENDER_CENTER);
+        m_renderer.submitRenderRequest(m_buildingConstructionTCSprite, x, y, 0, RenderLocation::RENDER_CENTER, true, m_playerColors[tileBuidling->getOwner()]);
       }
       else
       {
         m_renderer.submitRenderRequest(tileBuidling->getSprite(), x, y, 0, RenderLocation::RENDER_CENTER);
+        m_renderer.submitRenderRequest(tileBuidling->getTeamColorSprite(), x, y, 0, RenderLocation::RENDER_CENTER, true, m_playerColors[tileBuidling->getOwner()]);
       }
     }
     if (tile->bHasGeyser())
@@ -420,13 +444,24 @@ void SGameManager::handleRendering()
     x *= tileSprite->m_size;
     y *= tileSprite->m_size;
 
-    auto su = strongestUnit(tile);
+    std::shared_ptr<SUnit> su = nullptr;
+    if (tile != m_selectedTile)
+    {
+      su = strongestUnit(tile);
+    }
+    else
+    {
+      su = strongestUnit(m_selectedUnits);
+    }
     if (su == nullptr)
     {
       continue;
     }
     auto unitSprite = su->getSprite();
+    auto unitTCSprite = su->getTeamColorSprite();
     m_renderer.submitRenderRequest(unitSprite, x, y, 0, RenderLocation::RENDER_CENTER);
+    auto tc = m_playerColors[su->getOwner()];
+    m_renderer.submitRenderRequest(unitTCSprite, x, y, 0, RenderLocation::RENDER_CENTER, true, m_playerColors[su->getOwner()]);
   }
 
   m_renderer.submitRenderRequest(m_manaIconSprite, m_virtualWidth - 10, 10, 0,
@@ -540,8 +575,9 @@ void SGameManager::endTurn()
 
   for (const auto& [tile, building] : m_buildings)
   {
-    if (building->getOwner() != m_currentPlayerId){
-        continue;
+    if (building->getOwner() != m_currentPlayerId)
+    {
+      continue;
     }
     if (!building->bUnderConstruction())
     {
@@ -737,6 +773,18 @@ std::shared_ptr<SUnit> SGameManager::strongestUnit(std::shared_ptr<SNode> tile)
     return nullptr;
   }
   return *std::max_element(m_units[tile].begin(), m_units[tile].end(), compareUnits);
+}
+
+std::shared_ptr<SUnit> SGameManager::strongestUnit(std::unordered_set<std::shared_ptr<SUnit>> units)
+{
+  {
+    auto it = std::max_element(units.begin(), units.end(), compareUnits);
+    if (it == units.end())
+    {
+      return nullptr;
+    }
+    return *it;
+  }
 }
 
 bool SGameManager::bCoinToss(float chance)

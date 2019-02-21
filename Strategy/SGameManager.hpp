@@ -46,6 +46,8 @@ class SGameManager
   void handleLeftClick();
   void updateCamera();
   std::shared_ptr<SUnit> strongestUnit(std::shared_ptr<SNode> tile);
+
+  std::shared_ptr<SUnit> strongestUnit(std::unordered_set<std::shared_ptr<SUnit>> units);
   std::shared_ptr<SUnit> strongestUnitForPlayer(std::shared_ptr<SNode> tile, int playerId);
 
   std::shared_ptr<SNodeGraph> m_tiles;
@@ -97,6 +99,7 @@ class SGameManager
   std::shared_ptr<SSprite> m_uiIconBackgroundSprite;
   std::shared_ptr<SSprite> m_uiIconBackgroundBuildingSprite;
   std::shared_ptr<SSprite> m_buildingConstructionSprite;
+  std::shared_ptr<SSprite> m_buildingConstructionTCSprite;
   //  std::shared_ptr<SSprite> m_buildingBarracksIconSprite;
   //  std::shared_ptr<SSprite> m_buildingShrineIconSprite;
 
@@ -104,12 +107,12 @@ class SGameManager
   int m_numPlayers = 2;
   std::vector<std::shared_ptr<SPlayer>> m_players;
   const std::array<SDL_Color, 6> m_playerColors = {
-    SDL_Color{ 0xFF, 0x00, 0x00, 0x00 },
-    SDL_Color{ 0xFF, 0x00, 0xFF, 0x00 },
-    SDL_Color{ 0xFF, 0xFF, 0x00, 0x00 },
-    SDL_Color{ 0x00, 0x00, 0xFF, 0x00 },
-    SDL_Color{ 0x00, 0xFF, 0x00, 0x00 },
-    SDL_Color{ 0x00, 0xFF, 0xFF, 0x00 }
+    SDL_Color{ .r = 0xff, .g = 0x00, .b = 0x00, .a = 0x00 },
+    SDL_Color{ .r = 0xff, .g = 0x00, .b = 0xff, .a = 0x00 },
+    SDL_Color{ .r = 0xff, .g = 0xff, .b = 0x00, .a = 0x00 },
+    SDL_Color{ .r = 0x00, .g = 0x00, .b = 0xff, .a = 0x00 },
+    SDL_Color{ .r = 0x00, .g = 0xff, .b = 0x00, .a = 0x00 },
+    SDL_Color{ .r = 0x00, .g = 0xff, .b = 0xff, .a = 0x00 }
   };
   int m_currentPlayerId;
 

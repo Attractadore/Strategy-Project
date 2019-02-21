@@ -15,9 +15,8 @@
 
 #include <iostream>
 
-RenderRequest::RenderRequest(std::shared_ptr<SSprite> p_sprite, int p_x,
-                             int p_y, int p_frameIndex,
-                             RenderLocation p_renderLocation, bool p_bWorld, SDL_Color p_modulationColor) {
+RenderRequest::RenderRequest(std::shared_ptr<SSprite> p_sprite, int p_x, int p_y, int p_frameIndex, RenderLocation p_renderLocation, bool p_bWorld, SDL_Color p_modulationColor)
+{
   m_sprite = p_sprite;
   m_x = p_x;
   m_y = p_y;
@@ -27,7 +26,8 @@ RenderRequest::RenderRequest(std::shared_ptr<SSprite> p_sprite, int p_x,
   m_modulationColor = p_modulationColor;
 }
 
-RenderRequest::RenderRequest(const RenderRequest &other) {
+RenderRequest::RenderRequest(const RenderRequest& other)
+{
   m_sprite = other.m_sprite;
   m_x = other.m_x;
   m_y = other.m_y;
@@ -37,21 +37,24 @@ RenderRequest::RenderRequest(const RenderRequest &other) {
   m_modulationColor = other.m_modulationColor;
 }
 
-RenderRequest::~RenderRequest() {}
+RenderRequest::~RenderRequest()
+{
+}
 
-RenderRequest &RenderRequest::operator=(const RenderRequest &other) {
+RenderRequest& RenderRequest::operator=(const RenderRequest& other)
+{
   m_sprite = other.m_sprite;
   m_x = other.m_x;
   m_y = other.m_y;
   m_frameIndex = other.m_frameIndex;
   m_renderLocation = other.m_renderLocation;
   m_bWorld = other.m_bWorld;
+  m_modulationColor = other.m_modulationColor;
   return *this;
 }
 
-TextRenderRequest::TextRenderRequest(std::string p_text, int p_x, int p_y,
-                                     int p_h, int p_renderPriority,
-                                     RenderLocation p_renderLocation) {
+TextRenderRequest::TextRenderRequest(std::string p_text, int p_x, int p_y, int p_h, int p_renderPriority, RenderLocation p_renderLocation)
+{
   m_text = p_text;
   m_x = p_x;
   m_y = p_y;
@@ -60,34 +63,42 @@ TextRenderRequest::TextRenderRequest(std::string p_text, int p_x, int p_y,
   m_renderLocation = p_renderLocation;
 }
 
-bool operator==(const RenderRequest &lhs, const RenderRequest &rhs) {
+bool operator==(const RenderRequest& lhs, const RenderRequest& rhs)
+{
   return lhs.m_sprite->m_renderPriority == rhs.m_sprite->m_renderPriority;
 }
 
-bool operator<(const RenderRequest &lhs, const RenderRequest &rhs) {
+bool operator<(const RenderRequest& lhs, const RenderRequest& rhs)
+{
   // Sign swap so that lower priority sprites appear first in priority queue
   return lhs.m_sprite->m_renderPriority > rhs.m_sprite->m_renderPriority;
 }
 
-bool operator==(const TextRenderRequest &lhs, const TextRenderRequest &rhs) {
+bool operator==(const TextRenderRequest& lhs, const TextRenderRequest& rhs)
+{
   return lhs.m_renderPriority == rhs.m_renderPriority;
 }
 
-bool operator<(const TextRenderRequest &lhs, const TextRenderRequest &rhs) {
+bool operator<(const TextRenderRequest& lhs, const TextRenderRequest& rhs)
+{
   return lhs.m_renderPriority > rhs.m_renderPriority;
 }
 
-SRenderer::SRenderer() {
+SRenderer::SRenderer()
+{
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0)
+  {
     throw std::runtime_error("Failed to init SDL");
   }
 
-  if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
+  if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG)
+  {
     throw std::runtime_error("Failed to init SDL_image");
   }
 
-  if (TTF_Init() < 0) {
+  if (TTF_Init() < 0)
+  {
     throw std::runtime_error("Failed to init SDL_ttf");
   }
 
@@ -99,10 +110,11 @@ SRenderer::SRenderer() {
   m_realVirtualRatio = m_screenHeight / 1000.0f;
 
   window =
-      SDL_CreateWindow("Strategy", SDL_WINDOWPOS_UNDEFINED,
-                       SDL_WINDOWPOS_UNDEFINED, m_screenWidth, m_screenHeight,
-                       SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_GRABBED);
-  if (window == nullptr) {
+  SDL_CreateWindow("Strategy", SDL_WINDOWPOS_UNDEFINED,
+                   SDL_WINDOWPOS_UNDEFINED, m_screenWidth, m_screenHeight,
+                   SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_GRABBED);
+  if (window == nullptr)
+  {
     throw std::runtime_error("Failed to create window SDL error " +
                              std::string(SDL_GetError()));
   }
@@ -113,19 +125,22 @@ SRenderer::SRenderer() {
 
   std::string font = "./assets/fonts/OpenSans-Bold.ttf";
   m_textFont = TTF_OpenFont(font.c_str(), 48);
-  if (m_textFont == nullptr) {
+  if (m_textFont == nullptr)
+  {
     throw std::runtime_error("Failed to open font " + font + " SDL_ttf error " +
                              TTF_GetError());
   }
-  m_textColor = {0xE0, 0xE0, 0xE0, 0x00};
+  m_textColor = { 0xE0, 0xE0, 0xE0, 0x00 };
 
   m_renderThread = std::thread(&SRenderer::checkMTSupport, this);
 }
 
-SRenderer::~SRenderer() {
+SRenderer::~SRenderer()
+{
   m_renderThread.join();
 
-  for (auto &t : this->textures) {
+  for (auto& t : this->textures)
+  {
     SDL_DestroyTexture(t.second);
   }
 
@@ -139,8 +154,10 @@ SRenderer::~SRenderer() {
   SDL_Quit();
 }
 
-void SRenderer::render() {
-  if (m_bUseRenderThread) {
+void SRenderer::render()
+{
+  if (m_bUseRenderThread)
+  {
     m_renderThread.join();
   }
   m_tmpQueue = std::move(m_drawQueue);
@@ -149,26 +166,32 @@ void SRenderer::render() {
   m_tmpCameraZoom = m_camera->currentZoom;
   m_drawQueue = {};
   m_textDrawQueue = {};
-  if (m_bUseRenderThread) {
+  if (m_bUseRenderThread)
+  {
     m_renderThread = std::thread(&SRenderer::renderThread, this);
-  } else {
+  }
+  else
+  {
     renderThread();
   }
 }
 
-void SRenderer::renderThread() {
+void SRenderer::renderThread()
+{
   SDL_RenderClear(m_renderer);
 
   SDL_Rect dstRect;
   SDL_Rect srcRect;
 
   glm::vec2 drawOffset =
-      glm::vec2(500 * m_screenRatio, 500) - m_tmpCameraPos / m_tmpCameraZoom;
+  glm::vec2(500 * m_screenRatio, 500) - m_tmpCameraPos / m_tmpCameraZoom;
 
-  while (!m_tmpQueue.empty()) {
+  while (!m_tmpQueue.empty())
+  {
     auto rr = m_tmpQueue.top();
     m_tmpQueue.pop();
-    switch (rr.m_renderLocation) {
+    switch (rr.m_renderLocation)
+    {
     case RenderLocation::RENDER_CENTER:
       rr.m_x -= rr.m_sprite->m_size / 2;
       rr.m_y -= rr.m_sprite->m_size / 2;
@@ -186,34 +209,52 @@ void SRenderer::renderThread() {
       rr.m_y -= rr.m_sprite->m_size;
       break;
     }
-    if (rr.m_bWorld) {
+    if (rr.m_bWorld)
+    {
       dstRect.w = dstRect.h = int(
-          rr.m_sprite->m_tileSize / m_tmpCameraZoom * m_realVirtualRatio + 2);
+      rr.m_sprite->m_tileSize / m_tmpCameraZoom * m_realVirtualRatio + 2);
       dstRect.x =
-          int((rr.m_x / m_tmpCameraZoom + drawOffset.x) * m_realVirtualRatio);
+      int((rr.m_x / m_tmpCameraZoom + drawOffset.x) * m_realVirtualRatio);
       dstRect.y =
-          int((rr.m_y / m_tmpCameraZoom + drawOffset.y) * m_realVirtualRatio);
-    } else {
+      int((rr.m_y / m_tmpCameraZoom + drawOffset.y) * m_realVirtualRatio);
+    }
+    else
+    {
       dstRect.w = dstRect.h = rr.m_sprite->m_tileSize * m_realVirtualRatio + 2;
       dstRect.x = rr.m_x * m_realVirtualRatio;
       dstRect.y = rr.m_y * m_realVirtualRatio;
     }
 
-    if (textures.count(rr.m_sprite->m_texturePath) == 0) {
+    if (textures.count(rr.m_sprite->m_texturePath) == 0)
+    {
       loadTexture(rr.m_sprite->m_texturePath);
     }
 
-    if (rr.m_modulationColor.r != 0xFF and
-        rr.m_modulationColor.g != 0xFF and
-        rr.m_modulationColor.b != 0xFF and
-        rr.m_modulationColor.a != 0x00){
-        SDL_SetTextureColorMod(textures[rr.m_sprite->m_texturePath], rr.m_modulationColor.r, rr.m_modulationColor.g, rr.m_modulationColor.b);
+    Uint32 colorVal = rr.m_modulationColor.r;
+    //    std::cout << std::hex << "Modulated Color1 " << colorVal << std::endl;
+    colorVal <<= 8;
+    colorVal += rr.m_modulationColor.g;
+    //    std::cout << std::hex << "Modulated Color2 " << colorVal << std::endl;
+    colorVal <<= 8;
+    colorVal += rr.m_modulationColor.b;
+    //    std::cout << std::hex << "Modulated Color3 " << colorVal << std::endl;
+    colorVal <<= 8;
+    colorVal += rr.m_modulationColor.a;
+    //    std::cout << std::hex << "Modulated Color4 " << colorVal << std::endl;
+    if (colorVal != 0xffffff00)
+    {
+      //      std::cout << std::hex << "Modulated Color" << colorVal << std::endl;
+      //      std::cout << "Rendering modulated texture " << rr.m_sprite->m_texturePath << std::endl;
+      SDL_SetTextureColorMod(textures[rr.m_sprite->m_texturePath], rr.m_modulationColor.r, rr.m_modulationColor.g, rr.m_modulationColor.b);
     }
 
-    if (rr.m_sprite->m_numTiles == 1) {
+    if (rr.m_sprite->m_numTiles == 1)
+    {
       SDL_RenderCopy(m_renderer, textures[rr.m_sprite->m_texturePath], nullptr,
                      &dstRect);
-    } else {
+    }
+    else
+    {
       srcRect.w = srcRect.h = rr.m_sprite->m_tileSize;
       srcRect.x = srcRect.w * (rr.m_frameIndex % rr.m_sprite->m_numTilesAxis);
       srcRect.y = srcRect.h * (rr.m_frameIndex / rr.m_sprite->m_numTilesAxis);
@@ -222,15 +263,18 @@ void SRenderer::renderThread() {
     }
   }
 
-  while (!m_tmpTextDrawQueue.empty()) {
+  while (!m_tmpTextDrawQueue.empty())
+  {
     auto trr = m_tmpTextDrawQueue.top();
     m_tmpTextDrawQueue.pop();
     if (textures.count(trr.m_text) == 0 or
-        m_textAspectRatios.count(trr.m_text) == 0) {
+        m_textAspectRatios.count(trr.m_text) == 0)
+    {
       renderText(trr.m_text);
     }
     trr.m_w = int(trr.m_h * m_textAspectRatios[trr.m_text]);
-    switch (trr.m_renderLocation) {
+    switch (trr.m_renderLocation)
+    {
     case RenderLocation::RENDER_CENTER:
       trr.m_x -= trr.m_w / 2;
       trr.m_y -= trr.m_h / 2;
@@ -258,14 +302,17 @@ void SRenderer::renderThread() {
   SDL_RenderPresent(m_renderer);
 }
 
-void SRenderer::loadTexture(std::string path) {
-  SDL_Surface *tmpSurf = IMG_Load(path.c_str());
-  if (tmpSurf == nullptr) {
+void SRenderer::loadTexture(std::string path)
+{
+  SDL_Surface* tmpSurf = IMG_Load(path.c_str());
+  if (tmpSurf == nullptr)
+  {
     throw std::runtime_error("Failed to load texture from " + path +
                              " SDL_image error " + IMG_GetError());
   }
-  SDL_Texture *tex = SDL_CreateTextureFromSurface(m_renderer, tmpSurf);
-  if (tex == nullptr) {
+  SDL_Texture* tex = SDL_CreateTextureFromSurface(m_renderer, tmpSurf);
+  if (tex == nullptr)
+  {
     throw std::runtime_error("Failed to create texture SDL error " +
                              std::string(SDL_GetError()));
   }
@@ -273,20 +320,24 @@ void SRenderer::loadTexture(std::string path) {
   this->textures[path] = tex;
 }
 
-void SRenderer::renderText(std::string text) {
-  if (text == "") {
+void SRenderer::renderText(std::string text)
+{
+  if (text == "")
+  {
     return;
   }
-  SDL_Surface *tmpSurface =
-      TTF_RenderText_Blended(m_textFont, text.c_str(), m_textColor);
-  if (tmpSurface == nullptr) {
+  SDL_Surface* tmpSurface =
+  TTF_RenderText_Blended(m_textFont, text.c_str(), m_textColor);
+  if (tmpSurface == nullptr)
+  {
     throw std::runtime_error(
-        std::string("Failed to render text SDL_ttf error ") + TTF_GetError());
+    std::string("Failed to render text SDL_ttf error ") + TTF_GetError());
   }
   m_textAspectRatios[text] = float(tmpSurface->w) / tmpSurface->h;
-  SDL_Texture *textTexture =
-      SDL_CreateTextureFromSurface(m_renderer, tmpSurface);
-  if (textTexture == nullptr) {
+  SDL_Texture* textTexture =
+  SDL_CreateTextureFromSurface(m_renderer, tmpSurface);
+  if (textTexture == nullptr)
+  {
     throw std::runtime_error("Failed to create texture SDL error " +
                              std::string(SDL_GetError()));
   }
@@ -294,35 +345,37 @@ void SRenderer::renderText(std::string text) {
   this->textures[text] = textTexture;
 }
 
-void SRenderer::submitTextRenderRequest(std::string text, int x, int y, int h,
-                                        int renderPriority,
-                                        RenderLocation renderLocation) {
+void SRenderer::submitTextRenderRequest(std::string text, int x, int y, int h, int renderPriority, RenderLocation renderLocation)
+{
   m_textDrawQueue.push(
-      TextRenderRequest(text, x, y, h, renderPriority, renderLocation));
+  TextRenderRequest(text, x, y, h, renderPriority, renderLocation));
 }
 
-void SRenderer::setRenderCamera(std::shared_ptr<SCamera> p_camera) {
+void SRenderer::setRenderCamera(std::shared_ptr<SCamera> p_camera)
+{
   m_camera = p_camera;
   m_camera->viewportWidth = m_screenWidth;
   m_camera->viewportHeight = m_screenHeight;
 }
 
-void SRenderer::submitRenderRequest(std::shared_ptr<SSprite> p_sprite, int x,
-                                    int y, int frameIndex,
-                                    RenderLocation renderLocation,
-                                    bool bWorld, SDL_Color modulationColor) {
+void SRenderer::submitRenderRequest(std::shared_ptr<SSprite> p_sprite, int x, int y, int frameIndex, RenderLocation renderLocation, bool bWorld, SDL_Color modulationColor)
+{
   m_drawQueue.push(
-      RenderRequest{p_sprite, x, y, frameIndex, renderLocation, bWorld, modulationColor});
+  RenderRequest{ p_sprite, x, y, frameIndex, renderLocation, bWorld, modulationColor });
 }
 
-void SRenderer::checkMTSupport() {
+void SRenderer::checkMTSupport()
+{
   SDL_ClearError();
   SDL_RenderClear(m_renderer);
   SDL_RenderPresent(m_renderer);
-  if (std::string(SDL_GetError()).size() > 0) {
+  if (std::string(SDL_GetError()).size() > 0)
+  {
     std::cout << "Render in worker thread failed, disabling it" << std::endl;
     m_bUseRenderThread = false;
-  } else {
+  }
+  else
+  {
     std::cout << "Render in worker thread successful, keeping it" << std::endl;
   }
 }
