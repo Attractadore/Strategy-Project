@@ -16,13 +16,6 @@ int SCombatReady::applyDamage(int damage, int armorModifier)
   return appliedDamage;
 }
 
-int SCombatReady::removeMoves(int moves)
-{
-  int removedMoves = std::min(m_cMoves, moves);
-  m_cMoves -= removedMoves;
-  return removedMoves;
-}
-
 void SCombatReady::setOwner(int newOwnerId)
 {
   m_ownerId = newOwnerId;
@@ -32,22 +25,6 @@ bool SCombatReady::bIsDead()
 {
   return m_cHealth <= 0;
 }
-
-bool SCombatReady::bCanMove()
-{
-  return m_cMoves > 0;
-}
-
-void SCombatReady::refresh()
-{
-  m_cMoves = m_moves;
-}
-
-int SCombatReady::getMoves()
-{
-  return m_cMoves;
-}
-
 int SCombatReady::getHealth()
 {
   return m_cHealth;
@@ -96,7 +73,6 @@ void SCombatReady::copyStats(const SCombatReady& other)
   m_damage = other.m_damage;
   m_attackRange = other.m_attackRange;
   m_accuracy = other.m_accuracy;
-  m_moves = other.m_moves;
   m_buildTime = other.m_buildTime;
   m_resourceCost = other.m_resourceCost;
 

@@ -17,13 +17,20 @@ class SUnit : public SCombatReady
   void setPromotionUnit(SUnit* newPromotionUnit);
 
   virtual void copyStats(const SUnit& other);
+  virtual bool bCanMove();
 
   void addXP(int amount);
   int getXP();
+  int getMoves();
+  virtual int removeMoves(int moves);
+
+  virtual void refresh() override;
+  int m_moves;
 
   protected:
   SUnit* m_promotionUnit;
   void promote();
 
   int m_cXP;
+  int m_cMoves;
 };

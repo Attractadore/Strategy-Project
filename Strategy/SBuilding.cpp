@@ -4,7 +4,6 @@
 
 SBuilding::SBuilding()
 {
-  m_cMoves = 0;
   m_numTurnsBuilding = 0;
   m_currentConstructionTurns = 0;
 }
@@ -19,7 +18,6 @@ SBuilding::SBuilding(const SBuilding& other)
 {
   copyStats(other);
   m_cHealth = m_health / float(m_buildTime + 1);
-  m_cMoves = 0;
   m_numTurnsBuilding = 0;
   m_currentConstructionTurns = 0;
 }
@@ -28,7 +26,6 @@ SBuilding& SBuilding::operator=(const SBuilding& other)
 {
   copyStats(other);
   m_cHealth = m_health / float(m_buildTime + 1);
-  m_cMoves = 0;
   m_numTurnsBuilding = 0;
   m_currentConstructionTurns = 0;
 
@@ -130,26 +127,11 @@ void SBuilding::addUnitToBuildQueue(std::string unitId)
 
 void SBuilding::finishConstruction()
 {
+  m_cHealth += m_health * (m_buildTime - m_currentConstructionTurns) / float(m_buildTime + 1);
   m_currentConstructionTurns = m_buildTime;
-  m_cHealth += m_health * (m_buildTime - m_currentConstructionTurns) / (m_buildTime + 1);
 }
 
 bool SBuilding::bCanTrainUnit(std::string unit)
 {
   return m_buildableUnits.count(unit);
-}
-
-bool SBuilding::bCanMove()
-{
-  return false;
-}
-
-int SBuilding::removeMoves(int)
-{
-  return 0;
-}
-
-int SBuilding::getMoves()
-{
-  return 0;
 }

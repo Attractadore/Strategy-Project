@@ -37,10 +37,6 @@ class SBuilding : public SCombatReady
 
   virtual void refresh() override;
 
-  virtual bool bCanMove() override;
-  virtual int removeMoves(int) override;
-  virtual int getMoves() override;
-
   bool bCanTrainUnit(std::string unit);
 
   std::unordered_set<UNIT_ID> m_buildableUnits;

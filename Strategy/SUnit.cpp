@@ -40,6 +40,7 @@ void SUnit::copyStats(const SUnit& other)
 {
   SCombatReady::copyStats(other);
   m_promotionUnit = other.m_promotionUnit;
+  m_moves = other.m_moves;
 }
 
 void SUnit::addXP(int amount)
@@ -66,4 +67,26 @@ void SUnit::promote()
   m_cHealth = m_health;
   // Movement points remain the same
   m_cXP = 0;
+}
+
+bool SUnit::bCanMove()
+{
+  return m_cMoves > 0;
+}
+
+void SUnit::refresh()
+{
+  m_cMoves = m_moves;
+}
+
+int SUnit::getMoves()
+{
+  return m_cMoves;
+}
+
+int SUnit::removeMoves(int moves)
+{
+  int removedMoves = std::min(m_cMoves, moves);
+  m_cMoves -= removedMoves;
+  return removedMoves;
 }

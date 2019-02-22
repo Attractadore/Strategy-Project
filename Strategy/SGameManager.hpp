@@ -135,10 +135,10 @@ class SGameManager
   bool bCanConstructBuilding(std::shared_ptr<SNode> tile, std::string buildingId, int playerId);
 
   std::unordered_set<std::string>
-  getConstructableBuidlings(std::shared_ptr<SNode> tile, int playerId);
+  getConstructableBuildings(std::shared_ptr<SNode> tile, int playerId);
   std::shared_ptr<SBuilding>
-  constructBuidlingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building, int playerId);
-  std::shared_ptr<SBuilding> spawnBuidlingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building, int playerId);
+  constructBuildingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building, int playerId);
+  std::shared_ptr<SBuilding> spawnBuildingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building, int playerId);
 
   std::unordered_set<std::shared_ptr<SUnit>> spawnUnitsForPlayer(std::shared_ptr<SNode> tile, UNIT_ID unit, int playerId, int num);
 
