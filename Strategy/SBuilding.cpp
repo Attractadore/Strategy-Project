@@ -4,121 +4,51 @@
 
 SBuilding::SBuilding()
 {
+  m_cMoves = 0;
   m_numTurnsBuilding = 0;
+  m_currentConstructionTurns = 0;
+}
+
+SBuilding::SBuilding(BUILDING_ID buildingID)
+: SBuilding()
+{
+  m_ID = buildingID;
 }
 
 SBuilding::SBuilding(const SBuilding& other)
 {
-  m_sprite = other.m_sprite;
-  m_uiIconSprite = other.m_uiIconSprite;
-  m_teamColorSprite = other.m_teamColorSprite;
-
-  m_resourceGatherRate = other.m_resourceGatherRate;
-  m_resourceCost = other.m_resourceCost;
-  m_unitLookUpTable = other.m_unitLookUpTable;
-  m_constructionTime = other.m_constructionTime;
-  m_maxHealth = other.m_maxHealth;
-  m_armour = other.m_armour;
-  m_buildableUnits = other.m_buildableUnits;
-
-  m_currentHealth = m_maxHealth / float(m_constructionTime);
-  m_currentConstructionTurns = 0;
+  copyStats(other);
+  m_cHealth = m_health / float(m_buildTime + 1);
+  m_cMoves = 0;
   m_numTurnsBuilding = 0;
+  m_currentConstructionTurns = 0;
 }
-
-// SBuilding::SBuilding(SBuilding &&other) {
-//  m_sprite = other.m_sprite;
-//  m_resourceGatherRate = other.m_resourceGatherRate;
-
-//  m_numTurnsBuilding = 0;
-//}
-
-// SBuilding::~SBuilding() {}
 
 SBuilding& SBuilding::operator=(const SBuilding& other)
 {
-  m_sprite = other.m_sprite;
-  m_uiIconSprite = other.m_uiIconSprite;
-  m_teamColorSprite = other.m_teamColorSprite;
-
-  m_resourceGatherRate = other.m_resourceGatherRate;
-  m_resourceCost = other.m_resourceCost;
-  m_unitLookUpTable = other.m_unitLookUpTable;
-  m_constructionTime = other.m_constructionTime;
-  m_maxHealth = other.m_maxHealth;
-  m_armour = other.m_armour;
-  m_buildableUnits = other.m_buildableUnits;
-
-  m_currentHealth = m_maxHealth / float(m_constructionTime);
+  copyStats(other);
+  m_cHealth = m_health / float(m_buildTime + 1);
+  m_cMoves = 0;
   m_numTurnsBuilding = 0;
   m_currentConstructionTurns = 0;
 
   return *this;
 }
 
-// SBuilding &SBuilding::operator=(SBuilding &&other) {
-//  m_sprite = other.m_sprite;
-//  m_resourceGatherRate = other.m_resourceGatherRate;
-
-//  m_numTurnsBuilding = 0;
-
-//  return *this;
-//}
-
-void SBuilding::setParams(
-std::unordered_map<std::string, float> buildingParams)
+void SBuilding::copyStats(const SBuilding& other)
 {
-  auto it = buildingParams.find("resourceGatherRate");
-  if (it != buildingParams.end())
-  {
-    m_resourceGatherRate = int(it->second);
-  }
+  SCombatReady::copyStats(other);
+  m_unitLookUpTable = other.m_unitLookUpTable;
+  m_resourceGatherRate = other.m_resourceGatherRate;
+  m_buildableUnits = other.m_buildableUnits;
+  m_numTurnsBuilding = 0;
+  m_currentConstructionTurns = 0;
 }
 
 void SBuilding::setUnitLookUpTable(
 std::unordered_map<std::string, SUnit>* p_unitLookUpTable)
 {
   m_unitLookUpTable = p_unitLookUpTable;
-}
-
-void SBuilding::setSprite(std::shared_ptr<SSprite> newSprite)
-{
-  m_sprite = newSprite;
-}
-
-void SBuilding::setuiIcon(std::shared_ptr<SSprite> newSprite)
-{
-  m_uiIconSprite = newSprite;
-}
-
-void SBuilding::setTeamColorSprite(std::shared_ptr<SSprite> newTeamColorSprite)
-{
-  m_teamColorSprite = newTeamColorSprite;
-}
-
-std::shared_ptr<SSprite> SBuilding::getSprite()
-{
-  return m_sprite;
-}
-
-std::shared_ptr<SSprite> SBuilding::getuiIcon()
-{
-  return m_uiIconSprite;
-}
-
-std::shared_ptr<SSprite> SBuilding::getTeamColorSprite()
-{
-  return m_teamColorSprite;
-}
-
-void SBuilding::setOwner(int ownerId)
-{
-  m_owningPlayerId = ownerId;
-}
-
-int SBuilding::getOwner()
-{
-  return m_owningPlayerId;
 }
 
 bool SBuilding::finisingBuilding()
@@ -165,7 +95,7 @@ bool SBuilding::isBuilding()
 
 bool SBuilding::bUnderConstruction()
 {
-  return m_currentConstructionTurns < m_constructionTime;
+  return m_currentConstructionTurns < m_buildTime;
 }
 
 void SBuilding::refresh()
@@ -173,7 +103,7 @@ void SBuilding::refresh()
   if (bUnderConstruction())
   {
     m_currentConstructionTurns++;
-    m_currentHealth += m_maxHealth / float(m_constructionTime);
+    m_cHealth += m_health / float(m_buildTime + 1);
   }
   if (!isBuilding())
   {
@@ -200,15 +130,26 @@ void SBuilding::addUnitToBuildQueue(std::string unitId)
 
 void SBuilding::finishConstruction()
 {
-  m_currentConstructionTurns = m_constructionTime;
-}
-
-void SBuilding::resetConstruction()
-{
-  m_currentConstructionTurns = 0;
+  m_currentConstructionTurns = m_buildTime;
+  m_cHealth += m_health * (m_buildTime - m_currentConstructionTurns) / (m_buildTime + 1);
 }
 
 bool SBuilding::bCanTrainUnit(std::string unit)
 {
   return m_buildableUnits.count(unit);
+}
+
+bool SBuilding::bCanMove()
+{
+  return false;
+}
+
+int SBuilding::removeMoves(int)
+{
+  return 0;
+}
+
+int SBuilding::getMoves()
+{
+  return 0;
 }

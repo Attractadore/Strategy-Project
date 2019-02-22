@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SCombatReady.hpp"
 #include "SUnit.hpp"
 
 #include <list>
@@ -8,28 +9,20 @@
 #include <unordered_map>
 #include <unordered_set>
 
-struct SSprite;
+using BUILDING_ID = std::string;
 
-class SBuilding
+class SBuilding : public SCombatReady
 {
   public:
   SBuilding();
+  SBuilding(BUILDING_ID buildingID);
   SBuilding(const SBuilding& other);
-  //  SBuilding(SBuilding &&other);
-  //  ~SBuilding();
 
   SBuilding& operator=(const SBuilding& other);
-  //  SBuilding &operator=(SBuilding &&other);
 
-  std::shared_ptr<SSprite> getSprite();
-  std::shared_ptr<SSprite> getTeamColorSprite();
-  std::shared_ptr<SSprite> getuiIcon();
-  void setSprite(std::shared_ptr<SSprite> newSprite);
-  void setuiIcon(std::shared_ptr<SSprite> newSprite);
-  void setTeamColorSprite(std::shared_ptr<SSprite> newTeamColorSprite);
-  void
-  setUnitLookUpTable(std::unordered_map<std::string, SUnit>* p_unitLookUpTable);
-  void setParams(std::unordered_map<std::string, float> buildingParams);
+  virtual void copyStats(const SBuilding& other);
+
+  void setUnitLookUpTable(std::unordered_map<std::string, SUnit>* p_unitLookUpTable);
 
   void addUnitToBuildQueue(std::string unitId);
   std::string removeUnitFromBuildQueue(int index);
@@ -41,31 +34,22 @@ class SBuilding
   bool isBuilding();
   bool bUnderConstruction();
   void finishConstruction();
-  void resetConstruction();
 
-  void refresh();
+  virtual void refresh() override;
 
-  void setOwner(int ownerId);
-  int getOwner();
+  virtual bool bCanMove() override;
+  virtual int removeMoves(int) override;
+  virtual int getMoves() override;
 
   bool bCanTrainUnit(std::string unit);
 
-  int m_armour;
-  int m_maxHealth;
+  std::unordered_set<UNIT_ID> m_buildableUnits;
   int m_resourceGatherRate;
-  int m_resourceCost;
-  int m_constructionTime;
-  std::unordered_set<std::string> m_buildableUnits;
+
 
   protected:
-  std::shared_ptr<SSprite> m_sprite;
-  std::shared_ptr<SSprite> m_uiIconSprite;
-  std::shared_ptr<SSprite> m_teamColorSprite;
   std::unordered_map<std::string, SUnit>* m_unitLookUpTable;
 
-  private:
-  float m_currentHealth;
-  int m_owningPlayerId;
   std::list<std::string> m_buildQueue;
   int m_numTurnsBuilding;
   int m_currentConstructionTurns;

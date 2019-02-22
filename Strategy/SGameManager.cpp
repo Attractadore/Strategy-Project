@@ -84,33 +84,33 @@ SGameManager::SGameManager()
   //  spearman.m_resourceCost = 600;
   spearman.m_resourceCost = 50;
 
-  m_unitLookUpTable["UNIT_SPEARMAN"] = spearman;
+  m_unitLookUpTable[spearman.m_ID] = spearman;
 
-  SBuilding productionBuilding;
+  SBuilding productionBuilding("BUILDING_BARRACKS");
   productionBuilding.setUnitLookUpTable(&m_unitLookUpTable);
   productionBuilding.setSprite(productionBuildingSprite);
-  productionBuilding.setuiIcon(buildingBarracksIconSprite);
-  productionBuilding.setTeamColorSprite(productionBuildingTCSprite);
+  productionBuilding.setUISprite(buildingBarracksIconSprite);
+  productionBuilding.setTCSprite(productionBuildingTCSprite);
   productionBuilding.m_resourceGatherRate = 0;
-  productionBuilding.m_constructionTime = 10;
-  productionBuilding.m_armour = 0;
-  productionBuilding.m_maxHealth = 400;
+  productionBuilding.m_buildTime = 10;
+  productionBuilding.m_armor = 0;
+  productionBuilding.m_health = 400;
   productionBuilding.m_resourceCost = 800;
   productionBuilding.m_buildableUnits = { "UNIT_SPEARMAN" };
 
-  SBuilding resourceBuilding;
+  SBuilding resourceBuilding("BUILDING_SHRINE");
   resourceBuilding.setUnitLookUpTable(&m_unitLookUpTable);
   resourceBuilding.setSprite(shrineSprite);
-  resourceBuilding.setuiIcon(buildingShrineIconSprite);
-  resourceBuilding.setTeamColorSprite(shrineTCSprite);
+  resourceBuilding.setUISprite(buildingShrineIconSprite);
+  resourceBuilding.setTCSprite(shrineTCSprite);
   resourceBuilding.m_resourceGatherRate = 30;
-  resourceBuilding.m_constructionTime = 8;
-  resourceBuilding.m_armour = 2;
-  resourceBuilding.m_maxHealth = 200;
+  resourceBuilding.m_buildTime = 8;
+  resourceBuilding.m_armor = 2;
+  resourceBuilding.m_health = 200;
   resourceBuilding.m_resourceCost = 600;
 
-  m_buildingLookUpTable["BUILDING_BARRACKS"] = productionBuilding;
-  m_buildingLookUpTable["BUILDING_SHRINE"] = resourceBuilding;
+  m_buildingLookUpTable[productionBuilding.m_ID] = productionBuilding;
+  m_buildingLookUpTable[resourceBuilding.m_ID] = resourceBuilding;
 
   m_gen.seed(std::random_device()());
 
@@ -335,7 +335,7 @@ void SGameManager::handleRendering()
       else
       {
         m_renderer.submitRenderRequest(tileBuidling->getSprite(), x, y, 0, RenderLocation::RENDER_CENTER);
-        m_renderer.submitRenderRequest(tileBuidling->getTeamColorSprite(), x, y, 0, RenderLocation::RENDER_CENTER, true, m_playerColors[tileBuidling->getOwner()]);
+        m_renderer.submitRenderRequest(tileBuidling->getTCSprite(), x, y, 0, RenderLocation::RENDER_CENTER, true, m_playerColors[tileBuidling->getOwner()]);
       }
     }
     if (tile->bHasGeyser())
@@ -371,10 +371,10 @@ void SGameManager::handleRendering()
         m_renderer.submitRenderRequest(m_uiIconBackgroundBuildingSprite,
                                        m_virtualWidth - dx, m_virtualHeight - dy, 0,
                                        RenderLocation::RENDER_BOTTOM_RIGHT, false);
-        m_renderer.submitRenderRequest(m_buildingLookUpTable[cb].getuiIcon(),
+        m_renderer.submitRenderRequest(m_buildingLookUpTable[cb].getUISprite(),
                                        m_virtualWidth - dx, m_virtualHeight - dy, 0,
                                        RenderLocation::RENDER_BOTTOM_RIGHT, false);
-        dx += m_buildingLookUpTable[cb].getuiIcon()->m_size + 5;
+        dx += m_buildingLookUpTable[cb].getUISprite()->m_size + 5;
       }
     }
     int dx = 5;
@@ -399,7 +399,7 @@ void SGameManager::handleRendering()
 
     if (m_buildings.count(m_selectedTile) > 0)
     {
-      m_renderer.submitRenderRequest(m_buildings[m_selectedTile]->getuiIcon(), dx, m_virtualHeight + dy,
+      m_renderer.submitRenderRequest(m_buildings[m_selectedTile]->getUISprite(), dx, m_virtualHeight + dy,
                                      0, RenderLocation::RENDER_BOTTOM_LEFT, false);
       m_renderer.submitRenderRequest(m_uiIconBackgroundBuildingSprite, dx, m_virtualHeight + dy,
                                      0, RenderLocation::RENDER_BOTTOM_LEFT, false);
@@ -839,13 +839,13 @@ std::unordered_set<std::string> SGameManager::getConstructableBuidlings(std::sha
 std::shared_ptr<SBuilding>
 SGameManager::constructBuidlingForPlayer(std::shared_ptr<SNode> tile, BUILDING_ID building, int playerId)
 {
-  if (!bCanConstructBuilding(tile, building, playerId))
+  if (m_buildingLookUpTable.count(building) == 0 or !bCanConstructBuilding(tile, building, playerId))
   {
     return nullptr;
   }
-  auto newBuilding = spawnBuidlingForPlayer(tile, building, playerId);
-  newBuilding->resetConstruction();
-  m_players[playerId]->removeResources(newBuilding->m_resourceCost);
+  auto newBuilding = std::make_shared<SBuilding>(m_buildingLookUpTable[building]);
+  newBuilding->setOwner(playerId);
+  m_buildings[tile] = newBuilding;
   return newBuilding;
 }
 

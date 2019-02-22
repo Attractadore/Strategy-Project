@@ -15,8 +15,6 @@
 #include <unordered_set>
 #include <vector>
 
-using BUILDING_ID = std::string;
-
 class SNodeGraph;
 struct SCamera;
 class SNode;
