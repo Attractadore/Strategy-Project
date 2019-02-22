@@ -49,8 +49,7 @@ SGameManager::SGameManager()
   m_virtualHeight = 1000;
   m_virtualWidth = int(m_virtualHeight * m_aspectRatio);
   m_realVirtualRatio = float(m_camera->viewportHeight) / m_virtualHeight;
-  m_maxFPS = 0;
-  //  m_maxFPS = 120;
+  m_maxFPS = 120;
   m_maxFrameTime = 1.0f / m_maxFPS;
 
   auto defaultUnitSprite = std::make_shared<SSprite>("./assets/art/spearman.png", 1, 20, 3);
@@ -80,7 +79,7 @@ SGameManager::SGameManager()
   spearman.setSprite(defaultUnitSprite);
   spearman.setTCSprite(spearmanTCSprite);
   spearman.m_health = 75;
-  spearman.m_damage = 10;
+  spearman.m_damage = 400;
   spearman.m_accuracy = 1;
   spearman.m_moves = 2;
   spearman.m_buildTime = 4;
@@ -136,7 +135,7 @@ SGameManager::SGameManager()
 
   for (int i = 0; i < m_numPlayers; i++)
   {
-    m_players.push_back(std::make_shared<SPlayer>(i));
+    m_players[i] = std::make_shared<SPlayer>(i);
 
     std::uniform_int_distribution<> dist(0, foundationTiles.size() - 1);
     auto spawnTile = *std::next(foundationTiles.begin(), dist(m_gen));
@@ -184,8 +183,6 @@ void SGameManager::run()
     m_deltaTime = m_deltaTime =
     std::chrono::duration_cast<std::chrono::microseconds>(newTime - time).count() / 1000000.0f;
     time = newTime;
-
-    std::cout << "Running at " << 1 / m_deltaTime << " FPS" << std::endl;
 
     if (m_maxFPS != 0)
     {
@@ -294,6 +291,7 @@ void SGameManager::handleLogic()
     else if (k == KeyboardKey::KEY_ENTER)
     {
       endTurn();
+      //      checkAndRemovePlayers();
     }
   }
   for (auto& m : m_inputStruct.mouseClickedButtons)
@@ -301,10 +299,12 @@ void SGameManager::handleLogic()
     if (m == MouseButton::BUTTON_LEFT)
     {
       handleLeftClick();
+      //      checkAndRemovePlayers();
     }
     else if (m == MouseButton::BUTTON_RIGHT)
     {
       handleRightClick();
+      //      checkAndRemovePlayers();
     }
   }
 
@@ -950,9 +950,72 @@ void SGameManager::moveUnitToTile(std::shared_ptr<SUnit> unit, std::shared_ptr<S
 {
   addResourcesForPlayer(unit->getOwner(), tile->getAndRemoveMana());
   const auto& currentTile = getUnitTile(unit);
-  unit->removeMoves(tile->getMovementCost());
-  m_units[tile].insert(unit);
-  m_units[currentTile].erase(unit);
+  auto su = strongestUnit(tile);
+  auto it = m_buildings.find(tile);
+  std::shared_ptr<SCombatReady> target = nullptr;
+  bool bUnit = false;
+  bool bBuilding = false;
+  if (su != nullptr and su->getOwner() != unit->getOwner())
+  {
+    target = su;
+    bUnit = true;
+  }
+  else if (it != m_buildings.end() and it->second->getOwner() != unit->getOwner())
+  {
+    target = it->second;
+    bBuilding = true;
+  }
+
+  if (target != nullptr)
+  {
+    int uDmg = unit->dealDamage(m_coinTossDist(m_gen));
+    int xp = target->applyDamage(uDmg);
+    unit->addXP(xp);
+    unit->removeMoves(unit->getMoves());
+    std::cout << unit->m_ID << " attacked " << target->m_ID << " for " << xp << " damage. " << target->m_ID << " now has " << target->getHealth() << " health" << std::endl;
+    if (target->bIsDead())
+    {
+      unit->addXP(xp);
+      if (bUnit)
+      {
+        m_units[tile].erase(su);
+        m_unitTargetTiles.erase(su);
+      }
+      else if (bBuilding)
+      {
+        m_buildings.erase(it);
+      }
+      if (m_units[tile].size() == 0 and m_buildings.count(tile) == 0)
+      {
+        m_units[tile].insert(unit);
+        m_units[currentTile].erase(unit);
+      }
+    }
+    else if (target->m_damage > 0)
+    {
+      int tDmg = target->dealDamage(m_coinTossDist(m_gen));
+      xp = unit->applyDamage(tDmg);
+      if (bUnit)
+      {
+        su->addXP(xp);
+      }
+      if (unit->bIsDead())
+      {
+        if (bUnit)
+        {
+          su->addXP(xp);
+        }
+        m_units[currentTile].erase(unit);
+        m_unitTargetTiles.erase(unit);
+      }
+    }
+  }
+  else
+  {
+    unit->removeMoves(tile->getMovementCost());
+    m_units[tile].insert(unit);
+    m_units[currentTile].erase(unit);
+  }
 }
 
 void SGameManager::startUnitMovement(std::shared_ptr<SUnit> unit, std::shared_ptr<SNode> tile)
@@ -1005,3 +1068,33 @@ std::shared_ptr<SUnit> SGameManager::strongestUnitForPlayer(std::shared_ptr<SNod
   }
   return su;
 }
+
+//int SGameManager::countPlayerBuildings(int playerId)
+//{
+//  int count = 0;
+//  for (const auto& [tile, building] : m_buildings)
+//  {
+//    if (building->getOwner() == playerId)
+//    {
+//      count++;
+//    }
+//  }
+//  return count;
+//}
+
+//void SGameManager::checkAndRemovePlayers()
+//{
+//  for (int i = 0; i < m_numPlayers; i++)
+//  {
+//    if (countPlayerBuildings(i) == 0)
+//    {
+//      std::cout << "Player " << i << " has been defeated!" << std::endl;
+//      m_players.erase(i);
+//    }
+//  }
+//  if (m_players.size() == 1)
+//  {
+//    std::cout << "Player " << m_players.begin()->first << " wins!" << std::endl;
+//    m_bQuit = true;
+//  }
+//}

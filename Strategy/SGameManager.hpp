@@ -103,14 +103,14 @@ class SGameManager
 
   //  SPlayer defaultPlayer;
   int m_numPlayers = 2;
-  std::vector<std::shared_ptr<SPlayer>> m_players;
-  const std::array<SDL_Color, 6> m_playerColors = {
-    SDL_Color{ .r = 0xff, .g = 0x00, .b = 0x00, .a = 0x00 },
-    SDL_Color{ .r = 0x00, .g = 0x00, .b = 0xff, .a = 0x00 },
-    SDL_Color{ .r = 0xff, .g = 0x00, .b = 0xff, .a = 0x00 },
-    SDL_Color{ .r = 0xff, .g = 0xff, .b = 0x00, .a = 0x00 },
-    SDL_Color{ .r = 0x00, .g = 0xff, .b = 0x00, .a = 0x00 },
-    SDL_Color{ .r = 0x00, .g = 0xff, .b = 0xff, .a = 0x00 }
+  std::unordered_map<int, std::shared_ptr<SPlayer>> m_players;
+  std::unordered_map<int, SDL_Color> m_playerColors = {
+    { 0, SDL_Color{ .r = 0xff, .g = 0x00, .b = 0x00, .a = 0x00 } },
+    { 1, SDL_Color{ .r = 0x00, .g = 0x00, .b = 0xff, .a = 0x00 } },
+    { 2, SDL_Color{ .r = 0xff, .g = 0x00, .b = 0xff, .a = 0x00 } },
+    { 3, SDL_Color{ .r = 0xff, .g = 0xff, .b = 0x00, .a = 0x00 } },
+    { 4, SDL_Color{ .r = 0x00, .g = 0xff, .b = 0x00, .a = 0x00 } },
+    { 5, SDL_Color{ .r = 0x00, .g = 0xff, .b = 0xff, .a = 0x00 } }
   };
   int m_currentPlayerId;
 
@@ -161,4 +161,6 @@ class SGameManager
 
   int numUnitsForPlayer(std::shared_ptr<SNode> tile, int playerId);
   bool playerOwnsBuilding(std::shared_ptr<SNode> tile, int playerId);
+  int countPlayerBuildings(int playerId);
+  void checkAndRemovePlayers();
 };
