@@ -90,6 +90,7 @@ class SGameManager
 
   std::shared_ptr<SSprite> m_selectionSprite;
   std::shared_ptr<SSprite> m_endTurnButtonSprite;
+  std::shared_ptr<SSprite> m_endTurnButtonTCSprite;
   std::shared_ptr<SSprite> m_buttonSelectionSprite;
   std::shared_ptr<SSprite> m_buttonSelectionLargeSprite;
   std::shared_ptr<SSprite> m_manaIconSprite;
@@ -108,9 +109,9 @@ class SGameManager
   std::vector<std::shared_ptr<SPlayer>> m_players;
   const std::array<SDL_Color, 6> m_playerColors = {
     SDL_Color{ .r = 0xff, .g = 0x00, .b = 0x00, .a = 0x00 },
+    SDL_Color{ .r = 0x00, .g = 0x00, .b = 0xff, .a = 0x00 },
     SDL_Color{ .r = 0xff, .g = 0x00, .b = 0xff, .a = 0x00 },
     SDL_Color{ .r = 0xff, .g = 0xff, .b = 0x00, .a = 0x00 },
-    SDL_Color{ .r = 0x00, .g = 0x00, .b = 0xff, .a = 0x00 },
     SDL_Color{ .r = 0x00, .g = 0xff, .b = 0x00, .a = 0x00 },
     SDL_Color{ .r = 0x00, .g = 0xff, .b = 0xff, .a = 0x00 }
   };

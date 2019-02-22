@@ -55,6 +55,7 @@ SGameManager::SGameManager()
   auto spearmanTCSprite = std::make_shared<SSprite>("./assets/art/spearmanTC.png", 1, 20, 3.1);
   m_selectionSprite = std::make_shared<SSprite>("./assets/art/selection.png", 1, 60, 4);
   m_endTurnButtonSprite = std::make_shared<SSprite>("./assets/art/ui/endTurn.png", 1, 150, 5);
+  m_endTurnButtonTCSprite = std::make_shared<SSprite>("./assets/art/ui/endTurnTC.png", 1, 150, 4.9);
   m_buttonSelectionSprite = std::make_shared<SSprite>("./assets/art/ui/buttonSelection.png", 1, 20, 5);
   m_buttonSelectionLargeSprite = std::make_shared<SSprite>("./assets/art/ui/buttonSelection.png", 1, 30, 5);
   m_manaIconSprite = std::make_shared<SSprite>("./assets/art/ui/manaIcon.png", 1, 15, 5);
@@ -359,7 +360,7 @@ void SGameManager::handleRendering()
     x *= tileSprite->m_size;
     y *= tileSprite->m_size;
 
-    m_renderer.submitRenderRequest(m_selectionSprite, x, y, 0, RenderLocation::RENDER_CENTER);
+    m_renderer.submitRenderRequest(m_selectionSprite, x, y, 0, RenderLocation::RENDER_CENTER, true, m_playerColors[m_currentPlayerId]);
     if (!m_selectedUnits.empty())
     {
       auto constructableBuildings = getConstructableBuidlings(m_selectedTile, m_currentPlayerId);
@@ -468,6 +469,7 @@ void SGameManager::handleRendering()
                                  RenderLocation::RENDER_TOP_RIGHT, false);
 
   m_renderer.submitRenderRequest(m_endTurnButtonSprite, 0, 0, 0, RenderLocation::RENDER_TOP_LEFT, false);
+  m_renderer.submitRenderRequest(m_endTurnButtonTCSprite, 0, 0, 0, RenderLocation::RENDER_TOP_LEFT, false, m_playerColors[m_currentPlayerId]);
 
   m_renderer.submitTextRenderRequest(std::to_string(m_players[m_currentPlayerId]->getCurrentManaAmount()), m_virtualWidth - 35, 10, m_manaIconSprite->m_size, 5, RenderLocation::RENDER_TOP_RIGHT);
 
