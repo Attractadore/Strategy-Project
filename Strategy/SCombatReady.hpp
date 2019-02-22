@@ -4,18 +4,15 @@
 #include <memory>
 #include <unordered_map>
 
-class SSprite;
+struct SSprite;
 
 class SCombatReady
 {
 public:
-    SCombatReady() = delete;
-
     virtual int dealDamage(float chance, float accuracyModifier = 0);
     virtual int applyDamage(int damage, int armorModifier = 0);
     virtual int removeMoves(int moves);
     virtual void setOwner(int newOwnerId);
-    virtual void setUnitLookUpTable();
 
     virtual bool bIsDead();
     virtual bool bCanMove();

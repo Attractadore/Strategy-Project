@@ -15,7 +15,6 @@
 #include <unordered_set>
 #include <vector>
 
-using UNIT_ID = std::string;
 using BUILDING_ID = std::string;
 
 class SNodeGraph;

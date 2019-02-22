@@ -9,97 +9,61 @@ SUnit::SUnit()
 {
 }
 
-SUnit::SUnit(std::string p_unitId)
+SUnit::SUnit(UNIT_ID unitID)
 {
-  m_unitId = p_unitId;
+  m_ID = unitID;
 }
 
-///*
 SUnit::SUnit(const SUnit& other)
 {
   copyStats(other);
-}
-
-void SUnit::copyStats(const SUnit& other)
-{
-  m_unitId = other.m_unitId;
-  m_maxHP = other.m_maxHP;
-  m_damage = other.m_damage;
-  m_accuracy = other.m_accuracy;
-  m_maxMoves = other.m_maxMoves;
-  m_buildTime = other.m_buildTime;
-  m_resourceCost = other.m_resourceCost;
-
-  m_sprite = other.m_sprite;
-  m_teamColorSprite = other.m_teamColorSprite;
-
-  m_currentHP = m_maxHP;
-  m_currentMoves = m_maxMoves;
-}
-
-SUnit::~SUnit()
-{
+  m_cHealth = m_health;
+  m_cMoves = m_moves;
+  m_cXP = 0;
 }
 
 SUnit& SUnit::operator=(const SUnit& other)
 {
   copyStats(other);
+  m_cHealth = m_health;
+  m_cMoves = m_moves;
+  m_cXP = 0;
   return *this;
 }
 
-//*/
-
-int SUnit::removeMoves(int numMoves)
+void SUnit::setPromotionUnit(SUnit* newPromotionUnit)
 {
-  if (m_currentMoves <= 0)
+  m_promotionUnit = newPromotionUnit;
+}
+
+void SUnit::copyStats(const SUnit& other)
+{
+  SCombatReady::copyStats(other);
+  m_promotionUnit = other.m_promotionUnit;
+}
+
+void SUnit::addXP(int amount)
+{
+  m_cXP += amount;
+  if (m_cXP >= PROMOTION_XP)
   {
-    return 0;
+    promote();
   }
-  m_currentMoves -= numMoves;
-  return numMoves;
 }
 
-std::shared_ptr<SSprite> SUnit::getSprite()
+int SUnit::getXP()
 {
-  return m_sprite;
+  return m_cXP;
 }
 
-void SUnit::setSprite(std::shared_ptr<SSprite> newSprite)
+void SUnit::promote()
 {
-  m_sprite = newSprite;
-}
-
-std::shared_ptr<SSprite> SUnit::getTeamColorSprite()
-{
-  return m_teamColorSprite;
-}
-
-void SUnit::setTeamColorSprite(std::shared_ptr<SSprite> newTeamColorSprite)
-{
-  m_teamColorSprite = newTeamColorSprite;
-}
-
-void SUnit::setOwner(int ownerId)
-{
-  m_owningPlayerId = ownerId;
-}
-
-int SUnit::getOwner()
-{
-  return m_owningPlayerId;
-}
-
-int SUnit::getCurrentHealth()
-{
-  return m_currentHP;
-}
-
-bool SUnit::bCanMove()
-{
-  return m_currentMoves > 0;
-}
-
-void SUnit::refresh()
-{
-  m_currentMoves = m_maxMoves;
+  if (m_promotionUnit == nullptr)
+  {
+    return;
+  }
+  copyStats(*m_promotionUnit);
+  m_cHealth = m_health;
+  // Movement points remain the same
+  m_cXP = 0;
 }

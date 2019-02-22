@@ -1,52 +1,29 @@
 #pragma once
 
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "SCombatReady.hpp"
 
-class SNode;
-struct SSprite;
+#define PROMOTION_XP 100
+using UNIT_ID = std::string;
 
-class SUnit
+class SUnit : public SCombatReady
 {
   public:
   SUnit();
-  SUnit(std::string p_unitId);
+  SUnit(UNIT_ID unitID);
   SUnit(const SUnit& other);
-  virtual ~SUnit();
 
   SUnit& operator=(const SUnit& other);
 
-  int removeMoves(int numMoves);
+  void setPromotionUnit(SUnit* newPromotionUnit);
 
-  std::shared_ptr<SSprite> getSprite();
-  std::shared_ptr<SSprite> getTeamColorSprite();
-  void setSprite(std::shared_ptr<SSprite> newSprite);
-  void setTeamColorSprite(std::shared_ptr<SSprite> newTeamColorSprite);
-  void setOwner(int ownerId);
-  int getOwner();
+  virtual void copyStats(const SUnit& other);
 
-  int getCurrentHealth();
-  bool bCanMove();
-  void refresh();
-
-  std::string m_unitId;
-  int m_maxHP;
-  int m_damage;
-  float m_accuracy;
-  int m_maxMoves;
-  int m_buildTime;
-  int m_resourceCost;
+  void addXP(int amount);
+  int getXP();
 
   protected:
-  std::shared_ptr<SSprite> m_sprite;
-  std::shared_ptr<SSprite> m_teamColorSprite;
+  SUnit* m_promotionUnit;
+  void promote();
 
-  void copyStats(const SUnit& other);
-
-  private:
-  int m_currentHP;
-  int m_currentMoves;
-  int m_owningPlayerId;
+  int m_cXP;
 };

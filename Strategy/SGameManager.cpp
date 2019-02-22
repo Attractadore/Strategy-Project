@@ -21,8 +21,7 @@
 
 bool compareUnits(const std::shared_ptr<SUnit>& lhs, const std::shared_ptr<SUnit>& rhs)
 {
-  return lhs->getCurrentHealth() * lhs->m_damage * lhs->m_accuracy <
-         rhs->getCurrentHealth() * rhs->m_damage * rhs->m_accuracy;
+  return lhs->getHealth() * lhs->m_damage * lhs->m_accuracy < rhs->getHealth() * rhs->m_damage * rhs->m_accuracy;
 }
 
 SGameManager::SGameManager()
@@ -74,12 +73,13 @@ SGameManager::SGameManager()
   auto shrineTCSprite = std::make_shared<SSprite>("./assets/art/shrineTC.png", 1, 60, 2.1);
 
   SUnit spearman{ "UNIT_SPEARMAN" };
+  //  SUnit spearman;
   spearman.setSprite(defaultUnitSprite);
-  spearman.setTeamColorSprite(spearmanTCSprite);
-  spearman.m_maxHP = 75;
+  spearman.setTCSprite(spearmanTCSprite);
+  spearman.m_health = 75;
   spearman.m_damage = 10;
   spearman.m_accuracy = 1;
-  spearman.m_maxMoves = 2;
+  spearman.m_moves = 2;
   spearman.m_buildTime = 4;
   //  spearman.m_resourceCost = 600;
   spearman.m_resourceCost = 50;
@@ -459,7 +459,7 @@ void SGameManager::handleRendering()
       continue;
     }
     auto unitSprite = su->getSprite();
-    auto unitTCSprite = su->getTeamColorSprite();
+    auto unitTCSprite = su->getTCSprite();
     m_renderer.submitRenderRequest(unitSprite, x, y, 0, RenderLocation::RENDER_CENTER);
     auto tc = m_playerColors[su->getOwner()];
     m_renderer.submitRenderRequest(unitTCSprite, x, y, 0, RenderLocation::RENDER_CENTER, true, m_playerColors[su->getOwner()]);
