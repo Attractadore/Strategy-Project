@@ -26,8 +26,6 @@ bool compareUnits(const std::shared_ptr<SUnit>& lhs, const std::shared_ptr<SUnit
 
 SGameManager::SGameManager()
 {
-  //  m_worldWidth = 10;
-  //  m_worldHeight = 10;
   m_worldWidth = 16;
   m_worldHeight = 8;
   m_numManaBallRemaining = int(m_worldWidth * m_worldHeight * m_wsmbRatio);
@@ -54,6 +52,8 @@ SGameManager::SGameManager()
 
   auto defaultUnitSprite = std::make_shared<SSprite>("./assets/art/spearman.png", 1, 20, 3);
   auto spearmanTCSprite = std::make_shared<SSprite>("./assets/art/spearmanTC.png", 1, 20, 3.1);
+  auto archerSprite = std::make_shared<SSprite>("./assets/art/archer.png", 1, 20, 3);
+  auto archerTCSprite = std::make_shared<SSprite>("./assets/art/archerTC.png", 1, 20, 3.1);
   m_selectionSprite = std::make_shared<SSprite>("./assets/art/selection.png", 1, 60, 4);
   m_endTurnButtonSprite = std::make_shared<SSprite>("./assets/art/ui/endTurn.png", 1, 150, 5);
   m_endTurnButtonTCSprite = std::make_shared<SSprite>("./assets/art/ui/endTurnTC.png", 1, 150, 4.9);
@@ -75,18 +75,29 @@ SGameManager::SGameManager()
   auto shrineTCSprite = std::make_shared<SSprite>("./assets/art/shrineTC.png", 1, 60, 2.1);
 
   SUnit spearman{ "UNIT_SPEARMAN" };
-  //  SUnit spearman;
   spearman.setSprite(defaultUnitSprite);
   spearman.setTCSprite(spearmanTCSprite);
   spearman.m_health = 75;
-  spearman.m_damage = 400;
+  spearman.m_damage = 10;
   spearman.m_accuracy = 1;
+  spearman.m_attackRange = 0;
   spearman.m_moves = 2;
   spearman.m_buildTime = 4;
-  //  spearman.m_resourceCost = 600;
   spearman.m_resourceCost = 50;
 
+  SUnit archer{ "UNIT_ARCHER" };
+  archer.setSprite(archerSprite);
+  archer.setTCSprite(archerTCSprite);
+  archer.m_health = 50;
+  archer.m_damage = 13;
+  archer.m_accuracy = 0.7f;
+  archer.m_attackRange = 2;
+  archer.m_moves = 2;
+  archer.m_buildTime = 5;
+  archer.m_resourceCost = 60;
+
   m_unitLookUpTable[spearman.m_ID] = spearman;
+  m_unitLookUpTable[archer.m_ID] = archer;
 
   SBuilding productionBuilding("BUILDING_BARRACKS");
   productionBuilding.setUnitLookUpTable(&m_unitLookUpTable);
@@ -98,7 +109,7 @@ SGameManager::SGameManager()
   productionBuilding.m_armor = 0;
   productionBuilding.m_health = 400;
   productionBuilding.m_resourceCost = 800;
-  productionBuilding.m_buildableUnits = { "UNIT_SPEARMAN" };
+  productionBuilding.m_buildableUnits = { spearman.m_ID, archer.m_ID };
 
   SBuilding resourceBuilding("BUILDING_SHRINE");
   resourceBuilding.setUnitLookUpTable(&m_unitLookUpTable);
@@ -139,8 +150,9 @@ SGameManager::SGameManager()
 
     std::uniform_int_distribution<> dist(0, foundationTiles.size() - 1);
     auto spawnTile = *std::next(foundationTiles.begin(), dist(m_gen));
-    spawnBuildingForPlayer(spawnTile, "BUILDING_BARRACKS", i);
-    spawnUnitsForPlayer(spawnTile, "UNIT_SPEARMAN", i, 3);
+    spawnBuildingForPlayer(spawnTile, productionBuilding.m_ID, i);
+    spawnUnitsForPlayer(spawnTile, spearman.m_ID, i, 3);
+    spawnUnitsForPlayer(spawnTile, archer.m_ID, i, 1);
     if (spawnTile->getCurrentMana() > 0)
     {
       spawnTile->getAndRemoveMana();
@@ -152,21 +164,6 @@ SGameManager::SGameManager()
   m_currentPlayerId = 0;
 
   m_bQuit = false;
-
-  //  SDL_Color c;
-  //  c.r = 0;
-  //  c.g = 255;
-  //  c.b = 0;
-  //  c.a = 0;
-
-  //  m_playerColors.push_back(c);
-
-  //  c.r = 255;
-  //  c.g = 0;
-
-  //  m_playerColors.push_back(c);
-  //  m_playerColors = { { 255, 0, 0, 0 },
-  //                     { 0, 255, 0, 0 } };
 }
 
 SGameManager::~SGameManager()
@@ -489,16 +486,27 @@ void SGameManager::performUnitMovement(std::unordered_set<std::shared_ptr<SUnit>
     {
       continue;
     }
+    auto targetTile = getUnitTargetTile(unit);
+    int tx, ty, cx, cy, d;
+    std::tie(tx, ty) = targetTile->getPos();
     while (unit->bCanMove())
     {
       auto currentTile = getUnitTile(unit);
-      auto targetTile = getUnitTargetTile(unit);
+      std::tie(cx, cy) = currentTile->getPos();
+      d = std::max(std::abs(tx - cx), std::abs(ty - cy));
+      if ((d <= unit->m_attackRange or d == 1) and bTileHasEnemiesForPlayer(targetTile, m_currentPlayerId))
+      {
+        attackTile(unit, targetTile);
+        continue;
+      }
       auto route = m_tiles->shortestPath(currentTile, targetTile);
       if (route.size() == 0)
       {
         stopUnitMovement(unit);
         break;
       }
+
+
       auto nextTile = route.front();
       moveUnitToTile(unit, nextTile);
     }
@@ -950,11 +958,32 @@ void SGameManager::moveUnitToTile(std::shared_ptr<SUnit> unit, std::shared_ptr<S
 {
   addResourcesForPlayer(unit->getOwner(), tile->getAndRemoveMana());
   const auto& currentTile = getUnitTile(unit);
+  unit->removeMoves(tile->getMovementCost());
+  m_units[tile].insert(unit);
+  m_units[currentTile].erase(unit);
+}
+
+void SGameManager::attackTile(std::shared_ptr<SUnit> unit, std::shared_ptr<SNode> tile)
+{
+  const auto& currentTile = getUnitTile(unit);
+  int tx, ty, cx, cy, d;
+  std::tie(cx, cy) = currentTile->getPos();
+  std::tie(tx, ty) = tile->getPos();
+  d = std::max(std::abs(tx - cx), std::abs(ty - cy));
+  if (d == 1 and unit->m_attackRange == 0)
+  {
+  }
+  else if (unit->m_attackRange < d)
+  {
+    return;
+  }
+
   auto su = strongestUnit(tile);
   auto it = m_buildings.find(tile);
   std::shared_ptr<SCombatReady> target = nullptr;
   bool bUnit = false;
   bool bBuilding = false;
+
   if (su != nullptr and su->getOwner() != unit->getOwner())
   {
     target = su;
@@ -985,16 +1014,24 @@ void SGameManager::moveUnitToTile(std::shared_ptr<SUnit> unit, std::shared_ptr<S
       {
         m_buildings.erase(it);
       }
-      if (m_units[tile].size() == 0 and m_buildings.count(tile) == 0)
+      if (unit->m_attackRange == 0 and !bTileHasEnemiesForPlayer(tile, unit->getOwner()))
       {
-        m_units[tile].insert(unit);
-        m_units[currentTile].erase(unit);
+        unit->addMoves(1);
       }
     }
     else if (target->m_damage > 0)
     {
+      std::cout << "Counter distance " << d << " range " << target->m_attackRange << std::endl;
+      if (d == 1 and unit->m_attackRange == 0)
+      {
+      }
+      else if (target->m_attackRange < d)
+      {
+        return;
+      }
       int tDmg = target->dealDamage(m_coinTossDist(m_gen));
       xp = unit->applyDamage(tDmg);
+      std::cout << target->m_ID << " counterattacked " << unit->m_ID << " for " << xp << " damage. " << unit->m_ID << " now has " << unit->getHealth() << " health" << std::endl;
       if (bUnit)
       {
         su->addXP(xp);
@@ -1009,12 +1046,6 @@ void SGameManager::moveUnitToTile(std::shared_ptr<SUnit> unit, std::shared_ptr<S
         m_unitTargetTiles.erase(unit);
       }
     }
-  }
-  else
-  {
-    unit->removeMoves(tile->getMovementCost());
-    m_units[tile].insert(unit);
-    m_units[currentTile].erase(unit);
   }
 }
 
@@ -1067,6 +1098,21 @@ std::shared_ptr<SUnit> SGameManager::strongestUnitForPlayer(std::shared_ptr<SNod
     }
   }
   return su;
+}
+
+bool SGameManager::bTileHasEnemiesForPlayer(std::shared_ptr<SNode> tile, int playerId)
+{
+  const auto& su = strongestUnit(tile);
+  if (su != nullptr and su->getOwner() != playerId)
+  {
+    return true;
+  }
+  auto it = m_buildings.find(tile);
+  if (it != m_buildings.end() and it->second->getOwner() != playerId)
+  {
+    return true;
+  }
+  return false;
 }
 
 //int SGameManager::countPlayerBuildings(int playerId)

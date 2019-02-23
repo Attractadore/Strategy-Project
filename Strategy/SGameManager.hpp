@@ -163,4 +163,6 @@ class SGameManager
   bool playerOwnsBuilding(std::shared_ptr<SNode> tile, int playerId);
   int countPlayerBuildings(int playerId);
   void checkAndRemovePlayers();
+  void attackTile(std::shared_ptr<SUnit> unit, std::shared_ptr<SNode> tile);
+  bool bTileHasEnemiesForPlayer(std::shared_ptr<SNode> tile, int playerId);
 };

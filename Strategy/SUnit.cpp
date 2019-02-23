@@ -74,6 +74,11 @@ bool SUnit::bCanMove()
   return m_cMoves > 0;
 }
 
+void SUnit::addMoves(int moves)
+{
+  m_cMoves += moves;
+}
+
 void SUnit::refresh()
 {
   m_cMoves = m_moves;

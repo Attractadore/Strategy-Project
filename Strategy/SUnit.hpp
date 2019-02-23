@@ -23,6 +23,7 @@ class SUnit : public SCombatReady
   int getXP();
   int getMoves();
   virtual int removeMoves(int moves);
+  void addMoves(int moves);
 
   virtual void refresh() override;
   int m_moves;
