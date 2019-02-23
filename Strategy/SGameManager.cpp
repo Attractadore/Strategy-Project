@@ -21,7 +21,12 @@
 
 bool compareUnits(const std::shared_ptr<SUnit>& lhs, const std::shared_ptr<SUnit>& rhs)
 {
-  return lhs->getHealth() * lhs->m_damage * lhs->m_accuracy < rhs->getHealth() * rhs->m_damage * rhs->m_accuracy;
+  return lhs->getHealth() * lhs->m_damage * lhs->m_accuracy + lhs->getMoves() < rhs->getHealth() * rhs->m_damage * rhs->m_accuracy + rhs->getMoves();
+}
+
+bool compareUnitsUI(const std::shared_ptr<SUnit>& lhs, const std::shared_ptr<SUnit>& rhs)
+{
+  return lhs->getHealth() * lhs->m_damage * lhs->m_accuracy * lhs->getMoves() < rhs->getHealth() * rhs->m_damage * rhs->m_accuracy * rhs->getMoves();
 }
 
 SGameManager::SGameManager()
@@ -58,6 +63,8 @@ SGameManager::SGameManager()
   m_endTurnButtonSprite = std::make_shared<SSprite>("./assets/art/ui/endTurn.png", 1, 150, 5);
   m_endTurnButtonTCSprite = std::make_shared<SSprite>("./assets/art/ui/endTurnTC.png", 1, 150, 4.9);
   m_buttonSelectionSprite = std::make_shared<SSprite>("./assets/art/ui/buttonSelection.png", 1, 20, 5);
+  m_buttonSelectionHasNotMovedSprite = std::make_shared<SSprite>("./assets/art/ui/buttonSelectionHasNotMoved.png", 1, 20, 5);
+  m_buttonSelectionNoMovesSprite = std::make_shared<SSprite>("./assets/art/ui/buttonSelectionNoMoves.png", 1, 20, 5);
   m_buttonSelectionLargeSprite = std::make_shared<SSprite>("./assets/art/ui/buttonSelection.png", 1, 30, 5);
   m_manaIconSprite = std::make_shared<SSprite>("./assets/art/ui/manaIcon.png", 1, 15, 5);
   m_manaGeyserSprite = std::make_shared<SSprite>("./assets/art/manaGeyser.png", 1, 50, 2);
@@ -384,7 +391,7 @@ void SGameManager::handleRendering()
     auto unitSet = m_units[m_selectedTile];
     std::vector<std::shared_ptr<SUnit>> tileUnits(unitSet.begin(), unitSet.end());
     std::copy(unitSet.begin(), unitSet.end(), tileUnits.begin());
-    std::sort(tileUnits.rbegin(), tileUnits.rend(), compareUnits);
+    std::sort(tileUnits.rbegin(), tileUnits.rend(), compareUnitsUI);
     for (auto& unit : tileUnits)
     {
       m_renderer.submitRenderRequest(m_uiIconBackgroundSprite, dx, m_virtualHeight + dy, 0,
@@ -393,8 +400,21 @@ void SGameManager::handleRendering()
                                      RenderLocation::RENDER_BOTTOM_LEFT, false);
       if (m_selectedUnits.count(unit) > 0)
       {
-        m_renderer.submitRenderRequest(m_buttonSelectionSprite, dx, m_virtualHeight + dy, 0,
-                                       RenderLocation::RENDER_BOTTOM_LEFT, false);
+        if (unit->getMoves() == unit->m_moves)
+        {
+          m_renderer.submitRenderRequest(m_buttonSelectionHasNotMovedSprite, dx, m_virtualHeight + dy, 0,
+                                         RenderLocation::RENDER_BOTTOM_LEFT, false);
+        }
+        else if (!unit->bCanMove())
+        {
+          m_renderer.submitRenderRequest(m_buttonSelectionNoMovesSprite, dx, m_virtualHeight + dy, 0,
+                                         RenderLocation::RENDER_BOTTOM_LEFT, false);
+        }
+        else
+        {
+          m_renderer.submitRenderRequest(m_buttonSelectionSprite, dx, m_virtualHeight + dy, 0,
+                                         RenderLocation::RENDER_BOTTOM_LEFT, false);
+        }
       }
       dx += unit->getSprite()->m_size + 4;
     }
@@ -654,7 +674,7 @@ void SGameManager::handleLeftClick()
       {
         std::vector<std::shared_ptr<SUnit>> tileUnits(unitSet.begin(), unitSet.end());
         std::copy(unitSet.begin(), unitSet.end(), tileUnits.begin());
-        std::sort(tileUnits.rbegin(), tileUnits.rend(), compareUnits);
+        std::sort(tileUnits.rbegin(), tileUnits.rend(), compareUnitsUI);
         auto targetUnit = tileUnits[index];
         if (targetUnit->getOwner() != m_currentPlayerId)
         {

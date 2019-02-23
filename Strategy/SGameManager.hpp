@@ -15,6 +15,8 @@
 #include <unordered_set>
 #include <vector>
 
+using PLAYER_ID = int;
+
 class SNodeGraph;
 struct SCamera;
 class SNode;
@@ -89,6 +91,8 @@ class SGameManager
   std::shared_ptr<SSprite> m_endTurnButtonSprite;
   std::shared_ptr<SSprite> m_endTurnButtonTCSprite;
   std::shared_ptr<SSprite> m_buttonSelectionSprite;
+  std::shared_ptr<SSprite> m_buttonSelectionHasNotMovedSprite;
+  std::shared_ptr<SSprite> m_buttonSelectionNoMovesSprite;
   std::shared_ptr<SSprite> m_buttonSelectionLargeSprite;
   std::shared_ptr<SSprite> m_manaIconSprite;
   std::shared_ptr<SSprite> m_manaGeyserSprite;
