@@ -180,7 +180,7 @@ SNodeGraph::shortestPath(std::shared_ptr<SNode> src,
                          std::shared_ptr<SNode> dst)
 {
 
-  if (src == dst)
+  if (src == dst or !dst->bPassable)
   {
     return {};
   }
@@ -229,7 +229,7 @@ SNodeGraph::shortestPath(std::shared_ptr<SNode> src,
     std::list<std::shared_ptr<SNode>> adj = adjacentNodes(currentNode);
     for (auto& a : adj)
     {
-      if (closedSet.find(a) != closedSet.end())
+      if (!a->bPassable or closedSet.find(a) != closedSet.end())
       {
         continue;
       }
@@ -243,13 +243,17 @@ SNodeGraph::shortestPath(std::shared_ptr<SNode> src,
       {
         cameFrom[a] = currentNode;
         pathCost[a] = cumPathCost;
-        passThroughCost[a] = cumPathCost + heuristic(a, dst);
+        passThroughCost[a] = cumPathCost + a->m_movementCost + heuristic(a, dst);
       }
     }
   }
 
-  finalPath.pop_back();
-  std::reverse(finalPath.begin(), finalPath.end());
+
+  if (finalPath.size() > 0)
+  {
+    finalPath.pop_back();
+    std::reverse(finalPath.begin(), finalPath.end());
+  }
 
   return finalPath;
 }

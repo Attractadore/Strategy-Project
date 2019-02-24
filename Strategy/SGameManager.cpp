@@ -930,7 +930,7 @@ void SGameManager::generateMana()
 
 void SGameManager::tryAddManaBall(std::shared_ptr<SNode> tile)
 {
-  if (m_numManaBallRemaining > 0 and !tile->bHasGeyser() and !tile->bHasMana() and
+  if (tile->bPassable and m_numManaBallRemaining > 0 and !tile->bHasGeyser() and !tile->bHasMana() and
       m_units[tile].empty() and m_buildings.count(tile) == 0 and bCoinToss(m_manaBallChance))
   {
     tile->addMana(m_manaBallValue(m_gen));
