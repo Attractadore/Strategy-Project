@@ -23,6 +23,8 @@ class SNodeGraph
   std::shared_ptr<SNode> getTileAt(int x, int y);
 
   private:
+  void generateMap();
+
   std::vector<std::shared_ptr<SNode>> m_tiles;
 
   std::list<std::shared_ptr<SNode>> adjacentNodes(std::shared_ptr<SNode> src);

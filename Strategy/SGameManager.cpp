@@ -31,8 +31,10 @@ bool compareUnitsUI(const std::shared_ptr<SUnit>& lhs, const std::shared_ptr<SUn
 
 SGameManager::SGameManager()
 {
+  //  m_worldWidth = 32;
+  //  m_worldHeight = 16;
   m_worldWidth = 32;
-  m_worldHeight = 16;
+  m_worldHeight = 32;
   m_numManaBallRemaining = int(m_worldWidth * m_worldHeight * m_wsmbRatio);
 
   m_tiles = std::make_shared<SNodeGraph>(m_worldWidth, m_worldHeight);
@@ -61,6 +63,9 @@ SGameManager::SGameManager()
   auto archerTCSprite = std::make_shared<SSprite>("./assets/art/archerTC.png", 1, 20, 3.1);
   auto horsemanSprite = std::make_shared<SSprite>("./assets/art/horseman.png", 1, 20, 3);
   auto horsemanTCSprite = std::make_shared<SSprite>("./assets/art/horsemanTC.png", 1, 20, 3.1);
+  auto catapultSprite = std::make_shared<SSprite>("./assets/art/catapult.png", 1, 20, 3);
+  auto catapultTCSprite = std::make_shared<SSprite>("./assets/art/catapultTC.png", 1, 20, 3.1);
+
   auto swordsmanSprite = std::make_shared<SSprite>("./assets/art/swordsman.png", 1, 20, 3);
   auto swordsmanTCSprite = std::make_shared<SSprite>("./assets/art/swordsmanTC.png", 1, 20, 3.1);
   auto crossbowmanSprite = std::make_shared<SSprite>("./assets/art/crossbowman.png", 1, 20, 3);
@@ -126,6 +131,18 @@ SGameManager::SGameManager()
   horseman.m_buildTime = 5;
   horseman.m_resourceCost = 500;
 
+  SUnit catapult{ "UNIT_CATAPULT" };
+  catapult.setSprite(catapultSprite);
+  catapult.setTCSprite(catapultTCSprite);
+  catapult.m_health = 60;
+  catapult.m_armor = 2;
+  catapult.m_damage = 20;
+  catapult.m_accuracy = 0.6f;
+  catapult.m_attackRange = 3;
+  catapult.m_moves = 1;
+  catapult.m_buildTime = 7;
+  catapult.m_resourceCost = 800;
+
   SUnit swordsman{ "UNIT_SWORDSMAN" };
   swordsman.setSprite(swordsmanSprite);
   swordsman.setTCSprite(swordsmanTCSprite);
@@ -167,6 +184,7 @@ SGameManager::SGameManager()
   m_unitLookUpTable[spearman.m_ID] = spearman;
   m_unitLookUpTable[archer.m_ID] = archer;
   m_unitLookUpTable[horseman.m_ID] = horseman;
+  m_unitLookUpTable[catapult.m_ID] = catapult;
 
 
   SBuilding productionBuilding("BUILDING_BARRACKS");
@@ -179,7 +197,7 @@ SGameManager::SGameManager()
   productionBuilding.m_armor = 0;
   productionBuilding.m_health = 400;
   productionBuilding.m_resourceCost = 800;
-  productionBuilding.m_buildableUnits = { spearman.m_ID, archer.m_ID, horseman.m_ID };
+  productionBuilding.m_buildableUnits = { spearman.m_ID, archer.m_ID, horseman.m_ID, catapult.m_ID };
 
   SBuilding resourceBuilding("BUILDING_SHRINE");
   resourceBuilding.setUnitLookUpTable(&m_unitLookUpTable);
@@ -201,13 +219,17 @@ SGameManager::SGameManager()
 
   for (auto& t : m_tiles->getTiles())
   {
+    if (!(t->bPassable))
+    {
+      continue;
+    }
     if (bCoinToss(m_geyserChance) and m_buildings.count(t) == 0)
     {
       t->addGeyser();
       t->addMana(m_manaGeyserValue(m_gen));
     }
     tryAddManaBall(t);
-    if (!t->bHasGeyser() and bCoinToss(m_foundationChance))
+    if (!t->bHasGeyser() and bCoinToss(m_foundationChance) and t->m_movementCost != 3)
     {
       t->addFoundation();
       foundationTiles.insert(t);
@@ -221,8 +243,6 @@ SGameManager::SGameManager()
     std::uniform_int_distribution<> dist(0, foundationTiles.size() - 1);
     auto spawnTile = *std::next(foundationTiles.begin(), dist(m_gen));
     spawnBuildingForPlayer(spawnTile, productionBuilding.m_ID, i);
-    //    spawnUnitsForPlayer(spawnTile, spearman.m_ID, i, 3);
-    //    spawnUnitsForPlayer(spawnTile, archer.m_ID, i, 1);
     spawnUnitsForPlayer(spawnTile, spearman.m_ID, i, 1);
     if (spawnTile->getCurrentMana() > 0)
     {
@@ -581,6 +601,10 @@ void SGameManager::performUnitMovement(std::unordered_set<std::shared_ptr<SUnit>
       if ((d <= unit->m_attackRange or d == 1) and bTileHasEnemiesForPlayer(targetTile, m_currentPlayerId))
       {
         attackTile(unit, targetTile);
+        if (!unit->bCanMove())
+        {
+          m_unitTargetTiles.erase(unit);
+        }
         continue;
       }
       auto route = m_tiles->shortestPath(currentTile, targetTile);
@@ -1042,7 +1066,7 @@ void SGameManager::moveUnitToTile(std::shared_ptr<SUnit> unit, std::shared_ptr<S
 {
   addResourcesForPlayer(unit->getOwner(), tile->getAndRemoveMana());
   const auto& currentTile = getUnitTile(unit);
-  unit->removeMoves(tile->getMovementCost());
+  unit->removeMoves(tile->m_movementCost);
   m_units[tile].insert(unit);
   m_units[currentTile].erase(unit);
 }
@@ -1081,9 +1105,16 @@ void SGameManager::attackTile(std::shared_ptr<SUnit> unit, std::shared_ptr<SNode
 
   if (target != nullptr)
   {
-    int uDmg = unit->dealDamage(m_coinTossDist(m_gen));
-    int xp = target->applyDamage(uDmg);
-    std::cout << unit->m_ID << " attacked " << target->m_ID << " for " << xp << " damage. " << target->m_ID << " now has " << target->getHealth() << " health" << std::endl;
+    int uDmg = unit->dealDamage(m_coinTossDist(m_gen), tile->m_accuracyModifier);
+    int xp = target->applyDamage(uDmg, tile->m_armorModifier);
+    if (xp > 0)
+    {
+      std::cout << unit->m_ID << " attacked " << target->m_ID << " for " << xp << " damage. " << target->m_ID << " now has " << target->getHealth() << " health" << std::endl;
+    }
+    else
+    {
+      std::cout << unit->m_ID << " missed!" << std::endl;
+    }
     unit->addXP(xp);
     unit->removeMoves(unit->getMoves());
     if (target->bIsDead())
@@ -1112,9 +1143,16 @@ void SGameManager::attackTile(std::shared_ptr<SUnit> unit, std::shared_ptr<SNode
       {
         return;
       }
-      int tDmg = target->dealDamage(m_coinTossDist(m_gen));
-      xp = unit->applyDamage(tDmg);
-      std::cout << target->m_ID << " counterattacked " << unit->m_ID << " for " << xp << " damage. " << unit->m_ID << " now has " << unit->getHealth() << " health" << std::endl;
+      int tDmg = target->dealDamage(m_coinTossDist(m_gen), currentTile->m_accuracyModifier);
+      xp = unit->applyDamage(tDmg, currentTile->m_armorModifier);
+      if (xp > 0)
+      {
+        std::cout << target->m_ID << " counterattacked " << unit->m_ID << " for " << xp << " damage. " << unit->m_ID << " now has " << unit->getHealth() << " health" << std::endl;
+      }
+      else
+      {
+        std::cout << target->m_ID << " missed!" << std::endl;
+      }
       if (bUnit)
       {
         su->addXP(xp);
