@@ -31,8 +31,8 @@ bool compareUnitsUI(const std::shared_ptr<SUnit>& lhs, const std::shared_ptr<SUn
 
 SGameManager::SGameManager()
 {
-  m_worldWidth = 16;
-  m_worldHeight = 8;
+  m_worldWidth = 32;
+  m_worldHeight = 16;
   m_numManaBallRemaining = int(m_worldWidth * m_worldHeight * m_wsmbRatio);
 
   m_tiles = std::make_shared<SNodeGraph>(m_worldWidth, m_worldHeight);
@@ -55,10 +55,19 @@ SGameManager::SGameManager()
   m_maxFPS = 120;
   m_maxFrameTime = 1.0f / m_maxFPS;
 
-  auto defaultUnitSprite = std::make_shared<SSprite>("./assets/art/spearman.png", 1, 20, 3);
+  auto spearmanSprite = std::make_shared<SSprite>("./assets/art/spearman.png", 1, 20, 3);
   auto spearmanTCSprite = std::make_shared<SSprite>("./assets/art/spearmanTC.png", 1, 20, 3.1);
   auto archerSprite = std::make_shared<SSprite>("./assets/art/archer.png", 1, 20, 3);
   auto archerTCSprite = std::make_shared<SSprite>("./assets/art/archerTC.png", 1, 20, 3.1);
+  auto horsemanSprite = std::make_shared<SSprite>("./assets/art/horseman.png", 1, 20, 3);
+  auto horsemanTCSprite = std::make_shared<SSprite>("./assets/art/horsemanTC.png", 1, 20, 3.1);
+  auto swordsmanSprite = std::make_shared<SSprite>("./assets/art/swordsman.png", 1, 20, 3);
+  auto swordsmanTCSprite = std::make_shared<SSprite>("./assets/art/swordsmanTC.png", 1, 20, 3.1);
+  auto crossbowmanSprite = std::make_shared<SSprite>("./assets/art/crossbowman.png", 1, 20, 3);
+  auto crossbowmanTCSprite = std::make_shared<SSprite>("./assets/art/crossbowmanTC.png", 1, 20, 3.1);
+  auto knightSprite = std::make_shared<SSprite>("./assets/art/knight.png", 1, 20, 3);
+  auto knightTCSprite = std::make_shared<SSprite>("./assets/art/knightTC.png", 1, 20, 3.1);
+
   m_selectionSprite = std::make_shared<SSprite>("./assets/art/selection.png", 1, 60, 4);
   m_endTurnButtonSprite = std::make_shared<SSprite>("./assets/art/ui/endTurn.png", 1, 150, 5);
   m_endTurnButtonTCSprite = std::make_shared<SSprite>("./assets/art/ui/endTurnTC.png", 1, 150, 4.9);
@@ -82,29 +91,83 @@ SGameManager::SGameManager()
   auto shrineTCSprite = std::make_shared<SSprite>("./assets/art/shrineTC.png", 1, 60, 2.1);
 
   SUnit spearman{ "UNIT_SPEARMAN" };
-  spearman.setSprite(defaultUnitSprite);
+  spearman.setSprite(spearmanSprite);
   spearman.setTCSprite(spearmanTCSprite);
   spearman.m_health = 75;
+  spearman.m_armor = 1;
   spearman.m_damage = 10;
   spearman.m_accuracy = 1;
   spearman.m_attackRange = 0;
   spearman.m_moves = 2;
   spearman.m_buildTime = 4;
-  spearman.m_resourceCost = 50;
+  spearman.m_resourceCost = 300;
 
   SUnit archer{ "UNIT_ARCHER" };
   archer.setSprite(archerSprite);
   archer.setTCSprite(archerTCSprite);
   archer.m_health = 50;
+  archer.m_armor = 0;
   archer.m_damage = 13;
   archer.m_accuracy = 0.7f;
   archer.m_attackRange = 2;
   archer.m_moves = 2;
   archer.m_buildTime = 5;
-  archer.m_resourceCost = 60;
+  archer.m_resourceCost = 400;
+
+  SUnit horseman{ "UNIT_HORSEMAN" };
+  horseman.setSprite(horsemanSprite);
+  horseman.setTCSprite(horsemanTCSprite);
+  horseman.m_health = 65;
+  horseman.m_armor = 0;
+  horseman.m_damage = 12;
+  horseman.m_accuracy = 1;
+  horseman.m_attackRange = 0;
+  horseman.m_moves = 4;
+  horseman.m_buildTime = 5;
+  horseman.m_resourceCost = 500;
+
+  SUnit swordsman{ "UNIT_SWORDSMAN" };
+  swordsman.setSprite(swordsmanSprite);
+  swordsman.setTCSprite(swordsmanTCSprite);
+  swordsman.m_health = 90;
+  swordsman.m_armor = 2;
+  swordsman.m_damage = 12;
+  swordsman.m_accuracy = 1;
+  swordsman.m_attackRange = 0;
+  swordsman.m_moves = 2;
+
+  SUnit crossbowman{ "UNIT_CROSSBOWMAN" };
+  crossbowman.setSprite(archerSprite);
+  crossbowman.setTCSprite(archerTCSprite);
+  crossbowman.m_health = 60;
+  crossbowman.m_armor = 0;
+  crossbowman.m_damage = 16;
+  crossbowman.m_accuracy = 0.8f;
+  crossbowman.m_attackRange = 2;
+  crossbowman.m_moves = 2;
+
+  SUnit knight{ "UNIT_KNIGHT" };
+  knight.setSprite(knightSprite);
+  knight.setTCSprite(knightTCSprite);
+  knight.m_health = 75;
+  knight.m_armor = 1;
+  knight.m_damage = 14;
+  knight.m_accuracy = 1;
+  knight.m_attackRange = 0;
+  knight.m_moves = 5;
+
+  m_unitLookUpTable[swordsman.m_ID] = swordsman;
+  m_unitLookUpTable[crossbowman.m_ID] = crossbowman;
+  m_unitLookUpTable[knight.m_ID] = knight;
+
+  spearman.setPromotionUnit(&m_unitLookUpTable[swordsman.m_ID]);
+  archer.setPromotionUnit(&m_unitLookUpTable[crossbowman.m_ID]);
+  horseman.setPromotionUnit(&m_unitLookUpTable[knight.m_ID]);
 
   m_unitLookUpTable[spearman.m_ID] = spearman;
   m_unitLookUpTable[archer.m_ID] = archer;
+  m_unitLookUpTable[horseman.m_ID] = horseman;
+
 
   SBuilding productionBuilding("BUILDING_BARRACKS");
   productionBuilding.setUnitLookUpTable(&m_unitLookUpTable);
@@ -116,7 +179,7 @@ SGameManager::SGameManager()
   productionBuilding.m_armor = 0;
   productionBuilding.m_health = 400;
   productionBuilding.m_resourceCost = 800;
-  productionBuilding.m_buildableUnits = { spearman.m_ID, archer.m_ID };
+  productionBuilding.m_buildableUnits = { spearman.m_ID, archer.m_ID, horseman.m_ID };
 
   SBuilding resourceBuilding("BUILDING_SHRINE");
   resourceBuilding.setUnitLookUpTable(&m_unitLookUpTable);
@@ -158,8 +221,9 @@ SGameManager::SGameManager()
     std::uniform_int_distribution<> dist(0, foundationTiles.size() - 1);
     auto spawnTile = *std::next(foundationTiles.begin(), dist(m_gen));
     spawnBuildingForPlayer(spawnTile, productionBuilding.m_ID, i);
-    spawnUnitsForPlayer(spawnTile, spearman.m_ID, i, 3);
-    spawnUnitsForPlayer(spawnTile, archer.m_ID, i, 1);
+    //    spawnUnitsForPlayer(spawnTile, spearman.m_ID, i, 3);
+    //    spawnUnitsForPlayer(spawnTile, archer.m_ID, i, 1);
+    spawnUnitsForPlayer(spawnTile, spearman.m_ID, i, 1);
     if (spawnTile->getCurrentMana() > 0)
     {
       spawnTile->getAndRemoveMana();
@@ -1019,9 +1083,9 @@ void SGameManager::attackTile(std::shared_ptr<SUnit> unit, std::shared_ptr<SNode
   {
     int uDmg = unit->dealDamage(m_coinTossDist(m_gen));
     int xp = target->applyDamage(uDmg);
+    std::cout << unit->m_ID << " attacked " << target->m_ID << " for " << xp << " damage. " << target->m_ID << " now has " << target->getHealth() << " health" << std::endl;
     unit->addXP(xp);
     unit->removeMoves(unit->getMoves());
-    std::cout << unit->m_ID << " attacked " << target->m_ID << " for " << xp << " damage. " << target->m_ID << " now has " << target->getHealth() << " health" << std::endl;
     if (target->bIsDead())
     {
       unit->addXP(xp);
@@ -1041,7 +1105,6 @@ void SGameManager::attackTile(std::shared_ptr<SUnit> unit, std::shared_ptr<SNode
     }
     else if (target->m_damage > 0)
     {
-      std::cout << "Counter distance " << d << " range " << target->m_attackRange << std::endl;
       if (d == 1 and unit->m_attackRange == 0)
       {
       }
