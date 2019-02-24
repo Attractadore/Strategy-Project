@@ -104,8 +104,10 @@ SRenderer::SRenderer()
 
   SDL_DisplayMode dm;
   SDL_GetCurrentDisplayMode(0, &dm);
-  m_screenWidth = dm.w * (3.f / 4.f);
-  m_screenHeight = dm.h * (3.f / 4.f);
+  //  float rs = 3.0f / 4.0f;
+  float rs = 9.0f / 10.0f;
+  m_screenWidth = dm.w * rs;
+  m_screenHeight = dm.h * rs;
   m_screenRatio = float(m_screenWidth) / m_screenHeight;
   m_realVirtualRatio = m_screenHeight / 1000.0f;
 
@@ -121,7 +123,7 @@ SRenderer::SRenderer()
 
   m_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-  SDL_SetRenderDrawColor(m_renderer, 0x00, 0x80, 0x80, 0x00);
+  SDL_SetRenderDrawColor(m_renderer, 0x30, 0xa0, 0xe0, 0x00);
 
   std::string font = "./assets/fonts/OpenSans-Bold.ttf";
   m_textFont = TTF_OpenFont(font.c_str(), 48);

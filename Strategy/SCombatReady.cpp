@@ -12,6 +12,10 @@ int SCombatReady::dealDamage(float chance, float accuracyModifier)
 int SCombatReady::applyDamage(int damage, int armorModifier)
 {
   int appliedDamage = std::min(m_cHealth, damage - (m_armor + armorModifier));
+  if (appliedDamage < 0)
+  {
+    return 0;
+  }
   m_cHealth -= appliedDamage;
   return appliedDamage;
 }
